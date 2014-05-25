@@ -11,7 +11,7 @@
 using namespace fastjet;
 using namespace std;
 
-void fastjet_antikt_cluster.C() {
+void fastjet_antikt_clusternan() {
   //I'm not shure how the count the Number of Jets. I have to look up, if the the particles are somehow store by Events.
 
   //Input File
@@ -27,7 +27,10 @@ void fastjet_antikt_cluster.C() {
   //Cut on particles
   double MaxParticleEta = 2.5;
   double MinparticlePt = 0.5;
-  
+
+  //Option 1:
+  toS
+  /*
   //Option 2:
   //Reused Code from ExRootAnalysis/modules/MadGraphKtJetFinder.cc
   fBranchParticle = UseBranch("GenParticle");
@@ -47,7 +50,7 @@ void fastjet_antikt_cluster.C() {
 	    //Write variables of particles in a Vector. Maybe phi etc. should also be wrote in the vector
 	    particles.push_back( PseudoJet(particle->PX, particle->PY, particle->PZ, particle->E));
 	  }
-  }
+	  }*/
   //JetAlgorithm definition: Anti-kt with 0.5 Cone Radius
   double R = 0.5;
   JetDefinition jet_def(antikt_algorithm, R);
