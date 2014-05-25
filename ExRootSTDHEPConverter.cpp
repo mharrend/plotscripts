@@ -160,7 +160,7 @@ int main(int argc, char *argv[])
     {
       string branchname = "GenParticle"+"_event_"+convertInt(branchnumber);
       branchnumber = branchnumber + 1;
-      ExRootTreeBranch *branchGenParticle = treeWriter->NewBranch("GenParticle", TRootGenParticle::Class());
+      ExRootTreeBranch *branchGenParticle = treeWriter->NewBranch(branchname, TRootGenParticle::Class());
       
       ierr = StdHepXdrRead(&entryType, istr);
 
