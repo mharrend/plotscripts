@@ -1,3 +1,8 @@
+#include "TROOT.h"
+#include "TH1F.h"
+#include "TFile.h"
+#include "TObject.h"
+
 #include "fastjet/ClusterSequence.hh"
 
 #include "ExRootAnalysis/ExRootClasses.h"
@@ -68,3 +73,10 @@ void fastjet_antikt_cluster.C() {
   outputfile->WriteTObject(Henergy);
   
 }
+
+# ifndef __CINT__
+int main ( ) {
+  fastjet_antikt_cluster.C();
+  return 0;
+}
+# endif
