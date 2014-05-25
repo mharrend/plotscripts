@@ -7,11 +7,13 @@ using namespace fastjet;
 using namespace std;
 
 void fastjet_antikt_cluster.C() {
-
+  //I'm not shure how the count the Number of Jets. I have to look up, if the the particles are somehow store by Events.
 
   //Input File
   vector<TFile*> files; 
   files.push_back(new TFile("/path/to/converted/Herwig6/Eventfile.root"));
+  TFile *outputfile = new TFile("output.root","RECREATE");
+
 
   vector<PseudoJet> particles; //vector with particles
   //Step 1: Read out the px,py,pz and E of the particles and write them in some kind of vector and cluster them
@@ -53,7 +55,16 @@ void fastjet_antikt_cluster.C() {
   //a) Declare TH1F Histogramms for Number of Jets, Jet-pt, Jet-Energy, Jet-Phi and Jet-Theta
   //b) Loop through all Jets and fill the Histrogramms
   //c) save the Histogramms in a Root file
+  TH1F∗ Hpt=new TH1F ("Hpt","Jet Pt" ,50,0,300);
+  TH1F∗ Henergy=new TH1F ("Henergy","Jet Energy" ,100,0,600);
+  //TH1F∗ HnJets=new TH1F ("HnJets","Nubmber of Jets" ,100,0,600);
+   
+  for(int i=0; i < jets.size(); i++){
+    Hpt->Fill(jets[i].perp());
+    Henergy->Fill(jets[i].E());
+  }
   
-  
+  outputfile->WriteTObject(Hpt);
+  outputfile->WriteTObject(Henergy);
   
 }
