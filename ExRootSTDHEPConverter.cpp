@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
   // information about generated event
   ExRootTreeBranch *branchGenEvent = treeWriter->NewBranch("Event", TRootLHEFEvent::Class());
   // generated particles from HEPEVT
-  //ExRootTreeBranch *branchGenParticle = treeWriter->NewBranch("GenParticle", TRootGenParticle::Class());
+  ExRootTreeBranch *branchGenParticle = treeWriter->NewBranch("GenParticle", TRootGenParticle::Class());
 
   if(allEntries > 0)
   {
@@ -158,10 +158,11 @@ int main(int argc, char *argv[])
     int branchnumber = 0;
     for(entry = 0; entry < allEntries; ++entry)
     {
+      /*
       string branchname = "GenParticle"+"_event_"+convertInt(branchnumber);
       branchnumber = branchnumber + 1;
       ExRootTreeBranch *branchGenParticle = treeWriter->NewBranch(branchname, TRootGenParticle::Class());
-      
+      */
       ierr = StdHepXdrRead(&entryType, istr);
 
       if(ierr != 0)
