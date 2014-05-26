@@ -24,6 +24,9 @@ if len(sys.argv) == 3:
 elif len(sys.argv) == 4:
 	events = Events ([sys.argv[1],sys.argv[2]])
 	outputfile = TFile(sys.argv[3],"RECREATE")
+elif len(sys.argv) == 12:
+	events = Events ([sys.argv[1],sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5],sys.argv[6],sys.argv[7],sys.argv[8],sys.argv[9],sys.argv[10]])
+	outputfile = TFile(sys.argv[11],"RECREATE")
 else:
 	print "Something is wrong with the number of arguments!"
 	print "Use: python extracthistos.py input.root output.root, if you just want to extract the Histograms from a single root file"
