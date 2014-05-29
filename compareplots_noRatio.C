@@ -10,6 +10,7 @@ void compareplots_noRatio(){
   vector<TFile*> files; 
   files.push_back(new TFile("/storage/9/schweiger/analyseFxFx/pythia8/100kEvents/5F/ttbar0JetNoFxFx8TeVCTEQ6M-extracted.root"));
   files.push_back(new TFile("/storage/9/schweiger/analyseFxFx/pythia8/100kEvents/5F/ttbar0JetFxFx8TeVCTEQ6M-extracted.root"));   
+  //files.push_back(new TFile("/storage/9/schweiger/analyseFxFx/pythia8/100kEvents/5F/ttbar0JetFxFx8TeVCTEQ6M-extracted.root"));   
   
 
 
@@ -17,8 +18,17 @@ void compareplots_noRatio(){
   vector<TString> names;
   names.push_back("ttbar 0Jet, without FxFx-Merging");
   names.push_back("ttbar 0Jet, with FxFx-Merging");
+  //names.push_back("ttbar 0Jet, with FxFx-Merging");
   
-
+  vector<TString> titles;
+  titles.push_back("Number of Gen-Jets");
+  titles.push_back("Gen-Jet p_{T} (GeV)");
+  titles.push_back("Gen_Jet #phi");
+  titles.push_back("Gen Jet #theta");
+  titles.push_back("Gen Jet Energy (GeV)");
+  titles.push_back("p_{T} of hardest Gen-Jet");
+  titles.push_back("#eta of hardest Gen-Jets");
+  titles.push_back("p_{T} of 2nd hardest Gen-Jet");
 
   TFile *vergleich = new TFile("vergleich_ttbar_0Jet.root","RECREATE");
 
@@ -37,7 +47,7 @@ TH1::SetDefaultSumw2();
   // Save also as pictures
   int pictureNumber = 0;
 
-
+  int run = 0;
   while (key = (TKey*)nextkey()) {
     pictureNumber++;
     TString pictureName = TString::Format("%d.png",pictureNumber);
@@ -73,42 +83,9 @@ double max0;
 double max1;
 double max;
 	
-	if(histogramName.find("pt") != string::npos){	
-		histos.at(0)->GetXaxis()->SetTitle("Gen-Jet p_{T} (GeV)");
-		histos.at(0)->GetXaxis()->SetRangeUser(0,200);
-	   	}
-	else if(histogramName.find("phi") != string::npos){
-		histos.at(0)->GetXaxis()->SetTitle("Gen-Jet #phi"); 	 	
-		max0 = histos.at(0)->GetMaximum();
-		max1 = histos.at(1)->GetMaximum();
-		if (max0 >= max1){
-		  max = max0;
-		}
-		else {
-		  max = max1;
-		}
-		histos.at(0)->GetYaxis()->SetRangeUser(0,(max*1.10));		
-		}
-	else if(histogramName.find("theta") != string::npos){	
-		histos.at(0)->GetXaxis()->SetTitle("Gen-Jet #Theta");
-		histos.at(0)->GetYaxis()->SetNoExponent(noExponent = kFALSE)
-		max0 = histos.at(0)->GetMaximum();
-		max1 = histos.at(1)->GetMaximum();
-		if (max0 >= max1){
-		  max = max0;
-		}
-		else {
-		  max = max1;
-		}
-		histos.at(0)->GetYaxis()->SetRangeUser(0,(max*1.10));
-		} 
-	else if(histogramName.find("energy") != string::npos){
-		histos.at(0)->GetXaxis()->SetTitle("Gen-Jet Energy (GeV)");
-		histos.at(0)->GetXaxis()->SetRangeUser(0,600);
-		} 
-	else{	
-		histos.at(0)->GetXaxis()->SetTitle("Number of Gen-Jet");
-	   	}
+
+ histos.at(0)->GetXaxis()->SetTitle(titles.at(run));
+ run = run+1;
 
 // If only two histograms per plot make a ratio plot
 if(histos.size() == 2)
@@ -193,6 +170,15 @@ ratioHisto->Draw();*/
 }
 else
 {
+        TPad *mainPad = new TPad("","",0.0,0.0,1.0,1.0);
+        mainPad->SetNumber(1);
+        mainPad->SetBottomMargin(0.15);
+        mainPad->SetRightMargin(0.04);
+        mainPad->SetLeftMargin(0.13);
+        mainPad->Draw();
+        gStyle->SetOptTitle(0);
+        //mainPad->SetLogx(1);
+	c->cd(1);
 
     histos.at(0)->Draw("histo E");
     for(size_t i=0;i<histos.size();i++){

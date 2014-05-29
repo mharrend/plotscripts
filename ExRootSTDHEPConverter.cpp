@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
     // Loop over all objects
     Long64_t entry = 0;
     Long64_t recordNumber = 1;
-    int branchnumber = 0;
+    //int branchnumber = 0;
     for(entry = 0; entry < allEntries; ++entry)
     {
       /*
