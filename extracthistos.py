@@ -22,11 +22,11 @@ gSystem.Load("libDataFormatsPatCandidates.so")
 #-------------------------------------------------#
 #Check number of system arguments
 if len(sys.argv) == 3:
-	events = Events (sys.argv[1])
-	outputfile = TFile(sys.argv[2],"RECREATE")
+	events = Events (sys.argv[2])
+	outputfile = TFile(sys.argv[1],"RECREATE")
 elif len(sys.argv) == 4:
-	events = Events ([sys.argv[1],sys.argv[2]])
-	outputfile = TFile(sys.argv[3],"RECREATE")
+	events = Events ([sys.argv[2],sys.argv[3]])
+	outputfile = TFile(sys.argv[1],"RECREATE")
 elif len(sys.argv) == 12:
 	events = Events ([sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5],sys.argv[6],sys.argv[7],sys.argv[8],sys.argv[9],sys.argv[10],sys.argv[11]])
 	outputfile = TFile(sys.argv[1],"RECREATE")
@@ -35,8 +35,9 @@ elif len(sys.argv) == 22:
 	outputfile = TFile(sys.argv[1],"RECREATE")
 else:
 	print "Something is wrong with the number of arguments!"
-	print "Use: python extracthistos.py input.root output.root, if you just want to extract the Histograms from a single root file"
-	print "Or use: python extracthistos.py input1.root input2.root output.root, if you want also to add the input Histograms"
+	print "Use: python extracthistos.py output.root input.root, if you just want to extract the Histograms from a single root file"
+	print "Or use: python extracthistos.py output.root input1.root input2.root, if you want also to add the input Histograms"
+	print "currently inplemented: 10 inputs and 20 inputs"
 	exit()
 
 #Definition of the Histograms
@@ -46,20 +47,21 @@ Hpt = TH1F("Hpt","Gen-Jet pt",100,0,300)
 Hphi = TH1F("Hphi","Gen-Jet Phi",50,-pi,pi)
 Htheta = TH1F("Htheta","Gen-Jet Theta",50,0,pi)
 Henergy = TH1F("Henergy","Gen-Jet Energy",100,0,600)
-H1stJetpt = TH1F("H1stJetpt","Pt of hardest Gen-Jet", 100,0,300)
-H1stJeteta = TH1F("H1sJeteta","Eta of hardest Gen-Jet",50,-5,5)
-H2ndJetpt = TH1F("H2ndJetpt","Pt of 2nd hardest Gen-Jet", 100,0,300)
+HfirstJetpt = TH1F("HfirstJetpt","Pt of hardest Gen-Jet", 100,0,300)
+HfirstJeteta = TH1F("H1sJeteta","Eta of hardest Gen-Jet",50,-5,5)
+HsecoundJetpt = TH1F("HsecoundJetpt","Pt of 2nd hardest Gen-Jet", 100,0,300)
+"""
 #Particle Histograms
 Htpt = TH1F ("Htpt","pt of Top-Quarks", 100,0,300)
 Htbarpt = TH1F ("Htbarpt","pt of Top-Anti-Quark", 100, 0, 300)
 Httbarpt = TH1F ("Httbarpt", "pt of t tbar pair", 100, 0 ,300)
-
+"""
 # create handle outside of loop
 # Handle and lable are pointing at the Branch you want
 handle  = Handle ('std::vector<reco::GenJet>')
 label = ("ak5GenJets")
-particlehandle = Handle ('std::vector<reco::GenParticles>')
-particlelabel = ("genParticles")
+#particlehandle = Handle ('std::vector<reco::GenParticle>')
+#particlelabel = ("genParticles")
 
 
 #ROOT.gROOT.SetStyle('Plain') # white background
@@ -69,9 +71,9 @@ for event in events:
 	event.getByLabel (label, handle)
 	GenJets = handle.product()
 	nJets = 0
-	1stJetpt = 0
-	2ndJetpt = 0
-	1stJeteta = 0
+	firstJetpt = 0
+	secoundJetpt = 0
+	firstJeteta = 0
 	for Jet in GenJets:
 		if Jet.pt() >= ptcut and abs(Jet.eta()) <= etacut:
 			nJets = nJets + 1
@@ -79,15 +81,18 @@ for event in events:
 			Hphi.Fill(Jet.phi())
 			Htheta.Fill(Jet.theta())
 			Henergy.Fill(Jet.energy())
-			if Jet.pt() >= 1stJetpt:
-				2ndJetpt = 1stJetpt
-				1stJetpt = Jet.pt()
-				1stJeteta = Jet.eta()
-	H1stJetpt.Fill(1stJetpt)
-	H2ndJetpt.Fill(2ndJetpt)
-	H1stJeteta.Fill(1stJeteta)
+			if Jet.pt() >= firstJetpt and Jet.pt() >= secoundJetpt:
+				secoundJetpt = firstJetpt
+				firstJetpt = Jet.pt()
+				firstJeteta = Jet.eta()
+			elif Jet.pt() >= secoundJetpt and Jet.pt() <= firstJetpt:
+				secoundJetpt = Jet.pt()
+	HfirstJetpt.Fill(firstJetpt)
+	HsecoundJetpt.Fill(secoundJetpt)
+	HfirstJeteta.Fill(firstJeteta)
 	HnJets.Fill(nJets)
-print 'Filling new particle histograms'
+#print 'Filling new particle histograms'
+"""
 for pevent in events:
 	toppt = 0
 	tbarpt = 0
@@ -102,16 +107,16 @@ for pevent in events:
 		Htbarpt.Fill(tbarpt)
 		if toppt != 0 and tbarpt != 0:
 			Httbarpt.Fill(toppt + tbarpt)
-
+"""
 #Write Root File with Histogramms
 outputfile.WriteTObject(Hpt)
 outputfile.WriteTObject(Hphi)
 outputfile.WriteTObject(Htheta)
 outputfile.WriteTObject(Henergy)
 outputfile.WriteTObject(HnJets)
-outputfile.WriteTObject(H1stJetpt)
-outputfile.WriteTObject(H2ndJetpt)
-outputfile.WriteTObject(H1stJeteta)
-outputfile.WriteTObject(Htpt)
-outputfile.WriteTObject(Htbarpt)
-outputfile.WriteTObject(Httbarpt)
+outputfile.WriteTObject(HfirstJetpt)
+outputfile.WriteTObject(HsecoundJetpt)
+outputfile.WriteTObject(HfirstJeteta)
+#outputfile.WriteTObject(Htpt)
+#outputfile.WriteTObject(Htbarpt)
+#outputfile.WriteTObject(Httbarpt)
