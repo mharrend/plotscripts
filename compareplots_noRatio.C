@@ -27,8 +27,8 @@ void compareplots_noRatio(){
   titles.push_back("Gen Jet #theta");
   titles.push_back("Gen Jet Energy (GeV)");
   titles.push_back("p_{T} of hardest Gen-Jet");
-  titles.push_back("#eta of hardest Gen-Jets");
   titles.push_back("p_{T} of 2nd hardest Gen-Jet");
+  titles.push_back("#eta of hardest Gen-Jets");
 
   TFile *vergleich = new TFile("vergleich_ttbar_0Jet.root","RECREATE");
 
