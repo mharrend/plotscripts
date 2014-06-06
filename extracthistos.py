@@ -50,24 +50,23 @@ Henergy = TH1F("Henergy","Gen-Jet Energy",100,0,600)
 HfirstJetpt = TH1F("HfirstJetpt","Pt of hardest Gen-Jet", 100,0,300)
 HfirstJeteta = TH1F("H1sJeteta","Eta of hardest Gen-Jet",50,-5,5)
 HsecoundJetpt = TH1F("HsecoundJetpt","Pt of 2nd hardest Gen-Jet", 100,0,300)
-"""
 #Particle Histograms
 Htpt = TH1F ("Htpt","pt of Top-Quarks", 100,0,300)
 Htbarpt = TH1F ("Htbarpt","pt of Top-Anti-Quark", 100, 0, 300)
 Httbarpt = TH1F ("Httbarpt", "pt of t tbar pair", 100, 0 ,300)
-"""
 # create handle outside of loop
 # Handle and lable are pointing at the Branch you want
 handle  = Handle ('std::vector<reco::GenJet>')
 label = ("ak5GenJets")
-#particlehandle = Handle ('std::vector<reco::GenParticle>')
-#particlelabel = ("genParticles")
+particlehandle = Handle ('std::vector<reco::GenParticle>')
+particlelabel = ("genParticles")
 
 
 #ROOT.gROOT.SetStyle('Plain') # white background
 #Loop through all Events and Fill the Histograms
 print 'Filling new jet histograms'
 for event in events:
+        print "In event ", event
 	event.getByLabel (label, handle)
 	GenJets = handle.product()
 	nJets = 0
@@ -76,6 +75,8 @@ for event in events:
 	firstJeteta = 0
 	for Jet in GenJets:
 		if Jet.pt() >= ptcut and abs(Jet.eta()) <= etacut:
+                        for JetConstituent in Jet.getJetConstituents():
+                                print JetConstituent.pdgId(), " no of mothers ", JetConstituent.numberOfMothers()
 			nJets = nJets + 1
 			Hpt.Fill(Jet.pt())
 			Hphi.Fill(Jet.phi())
@@ -91,22 +92,29 @@ for event in events:
 	HsecoundJetpt.Fill(secoundJetpt)
 	HfirstJeteta.Fill(firstJeteta)
 	HnJets.Fill(nJets)
-#print 'Filling new particle histograms'
+        print 'Filling new particle histograms'
 """
-for pevent in events:
+#for pevent in events:
+        print "In pevent"
+        pevent = event
 	toppt = 0
 	tbarpt = 0
 	pevent.getByLabel (particlelabel, particlehandle)
-	GenParticle = particlehandle.product()
+        print "event nr ", pevent
+	GenParticles = particlehandle.product()
 	for particle in GenParticles:
-		if particle.pdgId() == 6:
-			toppt = particle.pt()
-		if particle.pdgId() == -6:
-			tbarpt = particle.pt
-		Htpt.Fill(toppt)
-		Htbarpt.Fill(tbarpt)
-		if toppt != 0 and tbarpt != 0:
-			Httbarpt.Fill(toppt + tbarpt)
+                if abs(particle.pdgId())<= 6 or particle.pdgId() == 21:
+                #if particle.numberOfDaughters() == 0:
+                        print "particle nr ", particle
+                        print particle.pdgId()
+#		if particle.pdgId() == 6:
+#			toppt = particle.pt()
+#		if particle.pdgId() == -6:
+#			tbarpt = particle.pt
+		#Htpt.Fill(toppt)
+		#Htbarpt.Fill(tbarpt)
+		#if toppt != 0 and tbarpt != 0:
+			#Httbarpt.Fill(toppt + tbarpt)
 """
 #Write Root File with Histogramms
 outputfile.WriteTObject(Hpt)
@@ -117,6 +125,6 @@ outputfile.WriteTObject(HnJets)
 outputfile.WriteTObject(HfirstJetpt)
 outputfile.WriteTObject(HsecoundJetpt)
 outputfile.WriteTObject(HfirstJeteta)
-#outputfile.WriteTObject(Htpt)
-#outputfile.WriteTObject(Htbarpt)
-#outputfile.WriteTObject(Httbarpt)
+outputfile.WriteTObject(Htpt)
+outputfile.WriteTObject(Htbarpt)
+outputfile.WriteTObject(Httbarpt)

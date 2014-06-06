@@ -62,7 +62,18 @@ TH1::SetDefaultSumw2();
     }
 		       
     for(size_t i=0;i<histos.size();i++){
-      histos.at(i)->SetLineColor(i+1);
+      if(i == 0){
+	histos.at(i)->SetLineColor(kBlack);
+      }
+      if(i == 1){
+	histos.at(i)->SetLineColor(kRed);
+      }
+      if(i == 2){
+	histos.at(i)->SetLineColor(kBlue);
+      }
+      if(i == 3){
+	histos.at(i)->SetLineColor(kGreen+2);
+      }
     }
     
     for(size_t i=0;i<histos.size();i++){

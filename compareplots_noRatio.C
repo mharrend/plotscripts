@@ -8,24 +8,27 @@ compares plots of same name in different root files and stores result in pdf
 
 void compareplots_noRatio(){
   vector<TFile*> files; 
-  files.push_back(new TFile("/storage/9/schweiger/analyseFxFx/pythia8/100kEvents/5F/ttbar0JetNoFxFx8TeVCTEQ6M-extracted.root"));
-  files.push_back(new TFile("/storage/9/schweiger/analyseFxFx/pythia8/100kEvents/5F/ttbar0JetFxFx8TeVCTEQ6M-extracted.root"));   
-  //files.push_back(new TFile("/storage/9/schweiger/analyseFxFx/pythia8/100kEvents/5F/ttbar0JetFxFx8TeVCTEQ6M-extracted.root"));   
+  files.push_back(new TFile("/storage/9/schweiger/analyseFxFx/pythia8/100kEvents/ttbarMergedFxFx8TeVCTEQ6M-extracted.root"));
+  files.push_back(new TFile("/storage/9/schweiger/analyseFxFx/pythia8/100kEvents/mergingscale_30/ttbarMergedFxFxMS30GeVMECut10GeV8TeVCTEQ6M-extracted.root"));   
+  files.push_back(new TFile("/storage/9/schweiger/analyseFxFx/pythia8/100kEvents/mergingscale_100/ttbarMergedMS100GeV8TeVCTEQ6M-extracted.root"));   
+  files.push_back(new TFile("/storage/9/schweiger/analyseFxFx/pythia8/100kEvents/mergingscale_100/ttbarMergedMS100GeVMCCut50GeV8TeVCTEQ6M-extracted.root"));   
   
 
 
-
+  
   vector<TString> names;
-  names.push_back("ttbar 0Jet, without FxFx-Merging");
-  names.push_back("ttbar 0Jet, with FxFx-Merging");
-  //names.push_back("ttbar 0Jet, with FxFx-Merging");
+  names.push_back("ttbar +0/1 Jet, #mu_{Q}=10 GeV #mu_{ME} = 10 GeV");
+  names.push_back("ttbar +0/1 Jet, #mu_{Q}=30 GeV #mu_{ME} = 10 GeV");
+  names.push_back("ttbar +0/1 Jet, #mu_{Q}=100 GeV #mu_{ME} = 10 GeV");
+  names.push_back("ttbar +0/1 Jet, #mu_{Q}=100 GeV #mu_{ME} = 50 GeV");
+  
   
   vector<TString> titles;
-  titles.push_back("Number of Gen-Jets");
   titles.push_back("Gen-Jet p_{T} (GeV)");
   titles.push_back("Gen_Jet #phi");
   titles.push_back("Gen Jet #theta");
   titles.push_back("Gen Jet Energy (GeV)");
+  titles.push_back("Number of Gen-Jets");
   titles.push_back("p_{T} of hardest Gen-Jet");
   titles.push_back("p_{T} of 2nd hardest Gen-Jet");
   titles.push_back("#eta of hardest Gen-Jets");
@@ -60,13 +63,24 @@ TH1::SetDefaultSumw2();
     }
 		       
     for(size_t i=0;i<histos.size();i++){
-      histos.at(i)->SetLineColor(i+1);
+      if(i == 0){
+	histos.at(i)->SetLineColor(kBlack);
+      }
+      if(i == 1){
+	histos.at(i)->SetLineColor(kRed);
+      }
+      if(i == 2){
+	histos.at(i)->SetLineColor(kBlue);
+      }
+      if(i == 3){
+	histos.at(i)->SetLineColor(kGreen+2);
+      }
     }
-   /*
+   
     for(size_t i=0;i<histos.size();i++){
       histos.at(i)->Sumw2();
       histos.at(i)->Scale(1./histos.at(i)->Integral(),"width");
-    }*/
+    }
 
 // Set axis title
 histos.at(0)->GetYaxis()->SetTitle("Normalized units"); 
@@ -79,9 +93,6 @@ histos.at(0)->GetXaxis()->SetTitleSize(0.06);
 histos.at(0)->GetXaxis()->SetTitleOffset(1.1);
 histos.at(0)->GetYaxis()->SetTitleSize(0.06);
 histos.at(0)->GetYaxis()->SetTitleOffset(1.15);
-double max0;
-double max1;
-double max;
 	
 
  histos.at(0)->GetXaxis()->SetTitle(titles.at(run));
@@ -187,7 +198,7 @@ else
 
 
     for(size_t i=0;i<histos.size()-1;i=i+2){
-
+      /*
       double ksresult = histos.at(i)->KolmogorovTest(histos.at(i+1));
       ksresult=floor(ksresult*1000+0.5)/1000;
       double chi2result =histos.at(i)->Chi2Test(histos.at(i+1),"WW");
@@ -200,7 +211,7 @@ else
       ks->SetTextColor(histos.at(i)->GetLineColor());
       ks->SetNDC();
       ks->Draw("");      
-
+      */
     }
 
     TLegend* l = new TLegend(0.65,0.5,0.9,0.7);
