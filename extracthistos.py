@@ -6,12 +6,32 @@ import ROOT
 from math import pi
 from ROOT import TH1F, TFile, TTree, TString, gSystem
 import sys 
-#---------------- Cut definitions -----------------#
+
+#----------- Class for Histograms ----------------#
+# initialize histograms the same way like when using TH1F only with Histograms
+# the constuctor initializes 3 TH1F objects.
+class Histograms(object):
+    def __init__(self, inhalt, title, nbins, minbin, maxbin):
+        self.pos = TH1F(inhalt+"pos",title+" with pos. weights",nbins,minbin,maxbin)
+        self.neg = TH1F(inhalt+"neg",title+" with neg. weights",nbins,minbin,maxbin)
+        self.combined = TH1F(inhalt,title,nbins,minbin,maxbin)
+    def fill(self,weight,value):
+        if weight >0:
+            self.pos.Fill(value,weight)
+        elif weight < 0:
+            self.neg.Fill(value,weight*(-1.))
+        self.combined.Fill(value,weight)
+    def write(self):
+        outputfile.WriteTObject(self.pos)
+        outputfile.WriteTObject(self.neg)
+        outputfile.WriteTObject(self.combined)
+#-------------------------------------------------#
+#---------------- Cut definitions ----------------#
 ptcut = 25 
 etacut = 2.5
-#--------------------------------------------------#
+#-------------------------------------------------#
 #First use ROOT Lite in CMSSW
-#-------------------- ROOT Lite -------------------#
+#-------------------- ROOT Lite ------------------#
 cmsswbase = TString.getenv("CMSSW_BASE")
 
 print 'Loading FW Lite setup.\n'
@@ -42,58 +62,78 @@ else:
 
 #Definition of the Histograms
 #Jet Histograms
-HnJets = TH1F ("HnJets", "Number of Jets", 15, -0.5, 14.5)
-Hpt = TH1F("Hpt","Gen-Jet pt",100,0,300)
-Hphi = TH1F("Hphi","Gen-Jet Phi",50,-pi,pi)
-Htheta = TH1F("Htheta","Gen-Jet Theta",50,0,pi)
-Henergy = TH1F("Henergy","Gen-Jet Energy",100,0,600)
-HfirstJetpt = TH1F("HfirstJetpt","Pt of hardest Gen-Jet", 100,0,300)
-HfirstJeteta = TH1F("H1sJeteta","Eta of hardest Gen-Jet",50,-5,5)
-HsecoundJetpt = TH1F("HsecoundJetpt","Pt of 2nd hardest Gen-Jet", 100,0,300)
+njets= Histograms ("HnJets", "Number of Jets", 15, -0.5, 14.5)
+pt = Histograms("Hpt","Gen-Jet pt",100,0,300)
+phi = Histograms("Hphi","Gen-Jet Phi",50,-pi,pi)
+theta = Histograms("Htheta","Gen-Jet Theta",50,0,pi)
+energy = Histograms("Henergy","Gen-Jet Energy",100,0,600)
+firstjetpt = Histograms("HfirstJetpt","Pt of hardest Gen-Jet", 100,0,300)
+firstjeteta = Histograms("H1sJeteta","Eta of hardest Gen-Jet",50,-5,5)
+secoundjetpt = Histograms("HsecoundJetpt","Pt of 2nd hardest Gen-Jet", 100,0,300)
+"""
 #Particle Histograms
 Htpt = TH1F ("Htpt","pt of Top-Quarks", 100,0,300)
 Htbarpt = TH1F ("Htbarpt","pt of Top-Anti-Quark", 100, 0, 300)
 Httbarpt = TH1F ("Httbarpt", "pt of t tbar pair", 100, 0 ,300)
+"""
 # create handle outside of loop
 # Handle and lable are pointing at the Branch you want
 handle  = Handle ('std::vector<reco::GenJet>')
 label = ("ak5GenJets")
 particlehandle = Handle ('std::vector<reco::GenParticle>')
 particlelabel = ("genParticles")
+infohandle = Handle ('<GenEventInfoProduct>')
 
 
 #ROOT.gROOT.SetStyle('Plain') # white background
 #Loop through all Events and Fill the Histograms
 print 'Filling new jet histograms'
+enumber = 0
 for event in events:
-        print "In event ", event
+        #print "In event ", event
 	event.getByLabel (label, handle)
 	GenJets = handle.product()
+	ievent = event
+	ievent.getByLabel ("generator", infohandle)
+	Infos = infohandle.product()
 	nJets = 0
 	firstJetpt = 0
 	secoundJetpt = 0
 	firstJeteta = 0
+	eventweight = Infos.weight()
+	print eventweight, enumber
 	for Jet in GenJets:
 		if Jet.pt() >= ptcut and abs(Jet.eta()) <= etacut:
-                        for JetConstituent in Jet.getJetConstituents():
-                                print JetConstituent.pdgId(), " no of mothers ", JetConstituent.numberOfMothers()
+                        #for JetConstituent in Jet.getJetConstituents():
+                        #        print JetConstituent.pdgId(), " no of mothers ", JetConstituent.numberOfMothers()
 			nJets = nJets + 1
-			Hpt.Fill(Jet.pt())
-			Hphi.Fill(Jet.phi())
-			Htheta.Fill(Jet.theta())
-			Henergy.Fill(Jet.energy())
+                        pt.fill(eventweight,Jet.pt())
+			phi.fill(eventweight,Jet.phi())
+			theta.fill(eventweight,Jet.theta())
+			energy.fill(eventweight,Jet.energy())
 			if Jet.pt() >= firstJetpt and Jet.pt() >= secoundJetpt:
 				secoundJetpt = firstJetpt
 				firstJetpt = Jet.pt()
 				firstJeteta = Jet.eta()
 			elif Jet.pt() >= secoundJetpt and Jet.pt() <= firstJetpt:
 				secoundJetpt = Jet.pt()
-	HfirstJetpt.Fill(firstJetpt)
-	HsecoundJetpt.Fill(secoundJetpt)
-	HfirstJeteta.Fill(firstJeteta)
-	HnJets.Fill(nJets)
-        print 'Filling new particle histograms'
+	enumber=enumber+1
+	print firstJetpt
+	firstjetpt.fill(eventweight,firstJetpt)
+	secoundjetpt.fill(eventweight,secoundJetpt)
+	firstjeteta.fill(eventweight,firstJeteta)
+	njets.fill(eventweight,nJets)
+
+pt.write()
+phi.write()
+theta.write()
+energy.write()
+firstjetpt.write()
+secoundjetpt.write()
+firstjeteta.write()
+njets.write()
 """
+        print 'Filling new particle histograms'
 #for pevent in events:
         print "In pevent"
         pevent = event
@@ -116,15 +156,3 @@ for event in events:
 		#if toppt != 0 and tbarpt != 0:
 			#Httbarpt.Fill(toppt + tbarpt)
 """
-#Write Root File with Histogramms
-outputfile.WriteTObject(Hpt)
-outputfile.WriteTObject(Hphi)
-outputfile.WriteTObject(Htheta)
-outputfile.WriteTObject(Henergy)
-outputfile.WriteTObject(HnJets)
-outputfile.WriteTObject(HfirstJetpt)
-outputfile.WriteTObject(HsecoundJetpt)
-outputfile.WriteTObject(HfirstJeteta)
-outputfile.WriteTObject(Htpt)
-outputfile.WriteTObject(Htbarpt)
-outputfile.WriteTObject(Httbarpt)
