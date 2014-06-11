@@ -30,8 +30,8 @@ class Histograms(object):
 ptcut = 25 
 etacut = 2.5
 #-------------------------------------------------#
-#First use ROOT Lite in CMSSW
-#-------------------- ROOT Lite ------------------#
+#First use FW Lite from CMSSW
+#-------------------- FW Lite --------------------#
 cmsswbase = TString.getenv("CMSSW_BASE")
 
 print 'Loading FW Lite setup.\n'
@@ -101,7 +101,6 @@ for event in events:
 	secoundJetpt = 0
 	firstJeteta = 0
 	eventweight = Infos.weight()
-	print eventweight, enumber
 	for Jet in GenJets:
 		if Jet.pt() >= ptcut and abs(Jet.eta()) <= etacut:
                         #for JetConstituent in Jet.getJetConstituents():
@@ -118,7 +117,6 @@ for event in events:
 			elif Jet.pt() >= secoundJetpt and Jet.pt() <= firstJetpt:
 				secoundJetpt = Jet.pt()
 	enumber=enumber+1
-	print firstJetpt
 	firstjetpt.fill(eventweight,firstJetpt)
 	secoundjetpt.fill(eventweight,secoundJetpt)
 	firstjeteta.fill(eventweight,firstJeteta)
