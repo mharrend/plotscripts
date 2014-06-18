@@ -1,5 +1,5 @@
 #Script to extract histograms from the Root Tree, that is produced by Pythia8 in CMSSW
-#Usage: python extracthistos.py input1.root (input2.root) output.root
+#Usage: python extracthistos.py output.root input1.root (input2.root)
 #the secound inputfile is only needed, if you want to fill the showerd events from two events on partonlevel into the same output histogram
 from DataFormats.FWLite import Events, Handle
 import ROOT

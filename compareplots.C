@@ -21,14 +21,30 @@ void compareplots(){
 
   
   vector<TString> titles;
-  titles.push_back("Number of Gen-Jets");
+  titles.push_back("Gen-Jet p_{T}  with pos weights (GeV)");
+  titles.push_back("Gen-Jet p_{T} with neg weights (GeV)");
   titles.push_back("Gen-Jet p_{T} (GeV)");
+  titles.push_back("Gen_Jet #phi with pos. weights");
+  titles.push_back("Gen_Jet #phi with neg. weights");
   titles.push_back("Gen_Jet #phi");
+  titles.push_back("Gen Jet #theta with pos weights");
+  titles.push_back("Gen Jet #theta with neg weights");
   titles.push_back("Gen Jet #theta");
+  titles.push_back("Gen Jet Energy with pos weights (GeV) ");
+  titles.push_back("Gen Jet Energy with neg weights (GeV)");
   titles.push_back("Gen Jet Energy (GeV)");
-  titles.push_back("p_{T} of hardest Gen-Jet");
-  titles.push_back("p_{T} of 2nd hardest Gen-Jet");
+  titles.push_back("p_{T} of hardest Gen-Jet with pos weights (GeV)");
+  titles.push_back("p_{T} of hardest Gen-Jet with neg weights (GeV)");
+  titles.push_back("p_{T} of hardest Gen-Jet (GeV)");
+  titles.push_back("p_{T} of 2nd hardest Gen-Jet with pos weights (GeV)");
+  titles.push_back("p_{T} of 2nd hardest Gen-Jet with neg weights (GeV)");
+  titles.push_back("p_{T} of 2nd hardest Gen-Jet (GeV)");
+  titles.push_back("#eta of hardest Gen-Jets with pos weights");
+  titles.push_back("#eta of hardest Gen-Jets with neg weights");
   titles.push_back("#eta of hardest Gen-Jets");
+  titles.push_back("Number of Gen-Jets with pos. weights");
+  titles.push_back("Number of Gen-Jets with neg. weights");
+  titles.push_back("Number of Gen-Jets");
 
 
   TFile *vergleich = new TFile("vergleich_ttbar_Fx_vs_noFx.root","RECREATE");
