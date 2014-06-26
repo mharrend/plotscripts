@@ -121,7 +121,7 @@ for cut in ptcuts:
                     firstjetpt.fill(eventweight,firstJetpt)
                     secoundjetpt.fill(eventweight,secoundJetpt)
                     firstjeteta.fill(eventweight,firstJeteta)
-                    njets.fill(eventweight,nJets)
+        njets.fill(eventweight,nJets)
     
     #wirte all histograms in the output file. After they are wrote, they are getting deleted (s. write() method)
     pt.write()
