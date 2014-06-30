@@ -36,7 +36,7 @@ class Histograms(object):
 #-------------------------------------------------#
 #---------------- Cut definitions ----------------#
 # ptcuts is a list of different cut values
-ptcuts = [25.,50.,100.] 
+ptcuts = [25.,50.,100.,30.,40.] 
 etacut = 2.5
 #-------------------------------------------------#
 #First use FW Lite from CMSSW
@@ -52,24 +52,26 @@ gSystem.Load("libDataFormatsPatCandidates.so")
 #Create output file bevor loop
 outputfile = TFile(sys.argv[1],"RECREATE")
 
+#Read in the inputfiles for every loop, else it won't work
+inputlist = []
+if mode == 0:
+    for f in glob(os.path.join("", '*.root')):
+        if f[-15:] != '-extracted.root' and f != sys.argv[1]:
+            inputlist.append(f)
+elif mode == 1:
+    for arg in sys.argv[2:]:
+        if arg[-5:] == '.root':
+            inputlist.append(arg)
+        else:
+            print "One or more of the Arguments are no .root file. Exiting!"
+            exit()
+else:
+    print "Please change Mode!"
+    exit()
+print inputlist
+
 for cut in ptcuts:
-    #Read in the inputfiles for every loop, else it won't work
-    inputlist = []
-    if mode == 0:
-        for f in glob(os.path.join("", '*.root')):
-            if f[-15:] != '-extracted.root':
-                inputlist.append(f)
-    elif mode == 1:
-        for arg in sys.argv[2:]:
-            if arg[-5:] == '.root':
-                inputlist.append(arg)
-            else:
-                print "One or more of the Arguments are no .root file. Exiting!"
-                exit()
-    else:
-        print "Please change Mode!"
-        exit()
-    print inputlist
+
     events = Events (inputlist)
                 
     cutn = str(cut) #variable for names of histograms
