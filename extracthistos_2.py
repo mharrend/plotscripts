@@ -1,12 +1,17 @@
 #Script to extract histograms from the Root Tree, that is produced by Pythia8 in CMSSW
-#Usage: python extracthistos.py output.root input1.root (input2.root)
-#the secound inputfile is only needed, if you want to fill the showerd events from two events on partonlevel into the same output histogram
+#Usage: python extracthistos_2.py output.root
+#The script, searches for .root files in the dir the script is running and uses them as inputs.
+#Currently the only execption to this is, are root-File that are ending with *-extracted.root
 from DataFormats.FWLite import Events, Handle
 import ROOT
 from math import pi
 from ROOT import TH1F, TFile, TTree, TString, gSystem
 import sys 
+from glob import glob
+import os
 
+#Mode 0: Searches for root files in dir, Mode 1: input files als arguments
+mode = 0
 #----------- Class for Histograms ----------------#
 # initialize histograms the same way like when using TH1F only with Histograms
 # the constuctor initializes 3 TH1F objects.
@@ -48,23 +53,25 @@ gSystem.Load("libDataFormatsPatCandidates.so")
 outputfile = TFile(sys.argv[1],"RECREATE")
 
 for cut in ptcuts:
-    #Check number of system arguments
-    #Read in the inputfiles for every loop, else it wont work
-    if len(sys.argv) == 3:
-	events = Events (sys.argv[2])
-    elif len(sys.argv) == 4:
-	events = Events ([sys.argv[2],sys.argv[3]])
-    elif len(sys.argv) == 12:
-	events = Events ([sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5],sys.argv[6],sys.argv[7],sys.argv[8],sys.argv[9],sys.argv[10],sys.argv[11]])
-    elif len(sys.argv) == 22:
-	events = Events ([sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5],sys.argv[6],sys.argv[7],sys.argv[8],sys.argv[9],sys.argv[10],sys.argv[11],sys.argv[12],sys.argv[13],sys.argv[14],sys.argv[15],sys.argv[16],sys.argv[17],sys.argv[18],sys.argv[19],sys.argv[20],sys.argv[21]])
+    #Read in the inputfiles for every loop, else it won't work
+    inputlist = []
+    if mode == 0:
+        for f in glob(os.path.join("", '*.root')):
+            if f[-15:] != '-extracted.root':
+                inputlist.append(f)
+    elif mode == 1:
+        for arg in sys.argv[2:]:
+            if arg[-5:] == '.root':
+                inputlist.append(arg)
+            else:
+                print "One or more of the Arguments are no .root file. Exiting!"
+                exit()
     else:
-	print "Something is wrong with the number of arguments!"
-	print "Use: python extracthistos.py output.root input.root, if you just want to extract the Histograms from a single root file"
-	print "Or use: python extracthistos.py output.root input1.root input2.root, if you want also to add the input Histograms"
-	print "currently inplemented: 10 inputs and 20 inputs"
-	exit()
-        
+        print "Please change Mode!"
+        exit()
+    print inputlist
+    events = Events (inputlist)
+                
     cutn = str(cut) #variable for names of histograms
     #Definition of the Histograms
     #Jet Histograms
