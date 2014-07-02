@@ -36,7 +36,7 @@ class Histograms(object):
 #-------------------------------------------------#
 #---------------- Cut definitions ----------------#
 # ptcuts is a list of different cut values
-ptcuts = [25.,50.,100.,30.,40.] 
+ptcuts = [25., 30., 50., 100.] 
 etacut = 2.5
 #-------------------------------------------------#
 #First use FW Lite from CMSSW
@@ -55,9 +55,14 @@ outputfile = TFile(sys.argv[1],"RECREATE")
 #Read in the inputfiles for every loop, else it won't work
 inputlist = []
 if mode == 0:
-    for f in glob(os.path.join("", '*.root')):
-        if f[-15:] != '-extracted.root' and f != sys.argv[1]:
-            inputlist.append(f)
+    if len(sys.argv) > 2:
+        dirs = sys.argv[2:]
+    else:
+        dirs = [""]
+    for d in dirs:
+        for f in glob(os.path.join(d, '*.root')):
+            if f[-15:] != '-extracted.root' and f != sys.argv[1]:
+                inputlist.append(f)
 elif mode == 1:
     for arg in sys.argv[2:]:
         if arg[-5:] == '.root':
