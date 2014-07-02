@@ -24,7 +24,7 @@ void compareplots_noRatio(){
   
   
   vector<TString> titles;
- titles.push_back("Gen-Jet p_{T}  with pos weights (GeV)");
+  titles.push_back("Gen-Jet p_{T}  with pos weights (GeV)");
   titles.push_back("Gen-Jet p_{T} with neg weights (GeV)");
   titles.push_back("Gen-Jet p_{T} (GeV)");
   titles.push_back("Gen_Jet #phi with pos. weights");
@@ -91,6 +91,12 @@ TH1::SetDefaultSumw2();
       if(i == 3){
 	histos.at(i)->SetLineColor(kGreen+2);
       }
+      if(i == 4){
+	histos.at(i)->SetLineColor(kMagenta-7);
+      }
+      if(i == 5){
+	histos.at(i)->SetLineColor(kOrange+7);
+      }
     }
    
     for(size_t i=0;i<histos.size();i++){
@@ -113,6 +119,9 @@ histos.at(0)->GetYaxis()->SetTitleOffset(1.15);
 
  histos.at(0)->GetXaxis()->SetTitle(titles.at(run));
  run = run+1;
+ if(run == (3*8)){
+   run = 0;
+ }
 
 // If only two histograms per plot make a ratio plot
 if(histos.size() == 2)
