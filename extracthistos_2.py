@@ -1,6 +1,7 @@
 #Script to extract histograms from the Root Tree, that is produced by Pythia8 in CMSSW
 #Usage: python extracthistos_2.py output.root
-#The script, searches for .root files in the dir the script is running and uses them as inputs.
+#The script, if mode 0 is set searches for .root files in the dir the script is running and uses them as inputs.
+#This script allows also to get root files directly from the dCache if mode 2 is set.
 #Currently the only execption to this is, are root-File that are ending with *-extracted.root
 from DataFormats.FWLite import Events, Handle
 import ROOT
@@ -11,7 +12,9 @@ from glob import glob
 import os
 
 #Mode 0: Searches for root files in dir, Mode 1: input files als arguments
-mode = 0
+#Mode 2: Takes files from dCache, please give full path, e.g.
+# /store/user/mharrend/FxFx_4FS_tt_0Jet_max1Jet_8TeV_CTEQ6M_0/FxFx_4FS_tt_0Jet_max1Jet_8TeV_CTEQ6M_0/f5ba0ca3f4cd3e3e394789a8eae55065/tt0JetFxFx8TeVCTEQ6M_1_1_fgZ.root
+mode = 2
 #----------- Class for Histograms ----------------#
 # initialize histograms the same way like when using TH1F only with Histograms
 # the constuctor initializes 3 TH1F objects.
@@ -70,6 +73,15 @@ elif mode == 1:
         else:
             print "One or more of the Arguments are no .root file. Exiting!"
             exit()
+
+elif mode == 2:
+    for arg in sys.argv[2:]:
+        if arg[-5:] == '.root':
+            inputlist.append('root://xrootd.ba.infn.it//' + arg)
+        else:
+            print "One or more of the Arguments are no .root file. Exiting!"
+            exit()
+
 else:
     print "Please change Mode!"
     exit()
