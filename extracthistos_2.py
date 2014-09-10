@@ -11,10 +11,12 @@ import sys
 from glob import glob
 import os
 
-#Mode 0: Searches for root files in dir, Mode 1: input files als arguments
+#Mode 0: Searches for root files in dir
+#Mode 1: input files als arguments
 #Mode 2: Takes files from dCache, please give full path, e.g.
-# /store/user/mharrend/FxFx_4FS_tt_0Jet_max1Jet_8TeV_CTEQ6M_0/FxFx_4FS_tt_0Jet_max1Jet_8TeV_CTEQ6M_0/f5ba0ca3f4cd3e3e394789a8eae55065/tt0JetFxFx8TeVCTEQ6M_1_1_fgZ.root
+#/store/user/mharrend/FxFx_4FS_tt_0Jet_max1Jet_8TeV_CTEQ6M_0/FxFx_4FS_tt_0Jet_max1Jet_8TeV_CTEQ6M_0/f5ba0ca3f4cd3e3e394789a8eae55065/tt0JetFxFx8TeVCTEQ6M_1_1_fgZ.root
 mode = 2
+
 #----------- Class for Histograms ----------------#
 # initialize histograms the same way like when using TH1F only with Histograms
 # the constuctor initializes 3 TH1F objects.
