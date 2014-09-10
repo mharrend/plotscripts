@@ -11,11 +11,16 @@ import sys
 from glob import glob
 import os
 
+def getmother(particle):
+    #for constituent in constituents:
+    #print particle.mother().status()
+    getmother(particle)
+
 #Mode 0: Searches for root files in dir
 #Mode 1: input files als arguments
 #Mode 2: Takes files from dCache, please give full path, e.g.
-#/store/user/mharrend/FxFx_4FS_tt_0Jet_max1Jet_8TeV_CTEQ6M_0/FxFx_4FS_tt_0Jet_max1Jet_8TeV_CTEQ6M_0/f5ba0ca3f4cd3e3e394789a8eae55065/tt0JetFxFx8TeVCTEQ6M_1_1_fgZ.root
-mode = 2
+# /store/user/mharrend/FxFx_4FS_tt_0Jet_max1Jet_8TeV_CTEQ6M_0/FxFx_4FS_tt_0Jet_max1Jet_8TeV_CTEQ6M_0/f5ba0ca3f4cd3e3e394789a8eae55065/tt0JetFxFx8TeVCTEQ6M_1_1_fgZ.root
+mode = 1
 
 #----------- Class for Histograms ----------------#
 # initialize histograms the same way like when using TH1F only with Histograms
@@ -104,6 +109,7 @@ for cut in ptcuts:
     firstjetpt = Histograms("HfirstJetpt"+cutn,"Pt of hardest Gen-Jet "+cutn, 100,0,300)
     firstjeteta = Histograms("H1sJeteta"+cutn,"Eta of hardest Gen-Jet "+cutn,50,-5,5)
     secoundjetpt = Histograms("HsecoundJetpt"+cutn,"Pt of 2nd hardest Gen-Jet "+cutn, 100,0,300)
+    isrjetpt = Histograms("Hisrjetpt"+cutn, "Pt of ISR-Jets "+cutn,100,0,300)
 
     # create handle outside of loop
     # Handle and lable are pointing at the Branch you want
@@ -136,6 +142,24 @@ for cut in ptcuts:
                 phi.fill(eventweight,Jet.phi())
                 theta.fill(eventweight,Jet.theta())
                 energy.fill(eventweight,Jet.energy())
+		
+		# ISR implementation
+		for constituent in Jet.getJetConstituents():
+                    isrconstituent = False
+                    while(True):
+                        try:
+                            #constituent.status()
+                            constituent = constituent.mother()
+                            #print constituent.status()
+                            if constituent.status() <= 49 and constituent.status()  >= 41:
+                                isrconstituent = True
+                        except ReferenceError:
+                            break
+                    if isrconstituent == True:
+                        break
+                if isrconstituent == True:
+                    isrjetpt.fill(eventweight,Jet.pt())
+
                 if Jet.pt() >= firstJetpt and Jet.pt() >= secoundJetpt:
                     secoundJetpt = firstJetpt
                     firstJetpt = Jet.pt()
@@ -157,9 +181,9 @@ for cut in ptcuts:
     secoundjetpt.write()
     firstjeteta.write()
     njets.write()
+    isrjetpt.write()
     #delete all variables, that are used again in the next loop
     del handle
     del label
     del infohandle
     del events
-
