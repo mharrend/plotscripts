@@ -92,7 +92,7 @@ print inputlist
 for cut in ptcuts:
 
     events = Events (inputlist)
-                
+
     cutn = str(cut) #variable for names of histograms
     #Definition of the Histograms
     #Jet Histograms
@@ -105,14 +105,11 @@ for cut in ptcuts:
     firstjeteta = Histograms("H1sJeteta"+cutn,"Eta of hardest Gen-Jet "+cutn,50,-5,5)
     secoundjetpt = Histograms("HsecoundJetpt"+cutn,"Pt of 2nd hardest Gen-Jet "+cutn, 100,0,300)
 
-
     # create handle outside of loop
     # Handle and lable are pointing at the Branch you want
     handle  = Handle ('std::vector<reco::GenJet>')
     label = ("ak5GenJets")
     infohandle = Handle ('<GenEventInfoProduct>')
-
-
 
     #ROOT.gROOT.SetStyle('Plain') # white background
     #Loop through all Events and Fill the Histograms
@@ -150,7 +147,7 @@ for cut in ptcuts:
                     secoundjetpt.fill(eventweight,secoundJetpt)
                     firstjeteta.fill(eventweight,firstJeteta)
         njets.fill(eventweight,nJets)
-    
+
     #wirte all histograms in the output file. After they are wrote, they are getting deleted (s. write() method)
     pt.write()
     phi.write()
@@ -165,5 +162,4 @@ for cut in ptcuts:
     del label
     del infohandle
     del events
-    
-    
+
