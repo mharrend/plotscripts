@@ -110,6 +110,9 @@ for cut in ptcuts:
     firstjeteta = Histograms("H1sJeteta"+cutn,"Eta of hardest Gen-Jet "+cutn,50,-5,5)
     secoundjetpt = Histograms("HsecoundJetpt"+cutn,"Pt of 2nd hardest Gen-Jet "+cutn, 100,0,300)
     isrjetpt = Histograms("Hisrjetpt"+cutn, "Pt of ISR-Jets "+cutn,100,0,300)
+    fsrjetpt = Histograms("Hfsrjetpt"+cutn, "Pt of FSR-Jets "+cutn,100,0,300)
+    nIsrJets = Histograms("HnIsrJets"+cutn,"Number of ISR Jets per Event "+cutn, 15, -0.5, 14.5)
+    nFsrJets = Histograms("HnFsrJets"+cutn,"Number of FSR Jets per Event "+cutn, 15, -0.5, 14.5)
 
     # create handle outside of loop
     # Handle and lable are pointing at the Branch you want
@@ -132,6 +135,8 @@ for cut in ptcuts:
         firstJetpt = 0
         secoundJetpt = 0
         firstJeteta = 0
+	nISRJets = 0
+	nFSRJets = 0
         eventweight = Infos.weight()
         for Jet in GenJets:
             if Jet.pt() >= cut and abs(Jet.eta()) <= etacut:
@@ -143,22 +148,30 @@ for cut in ptcuts:
                 theta.fill(eventweight,Jet.theta())
                 energy.fill(eventweight,Jet.energy())
 		
-		# ISR implementation
+		# ISR/FSR implementation
 		for constituent in Jet.getJetConstituents():
-                    isrconstituent = False
+                    childOfHard = False
+		    childOfISS = False
+		    childOfFSS = False
                     while(True):
-                        try:
-                            #constituent.status()
-                            constituent = constituent.mother()
-                            #print constituent.status()
-                            if constituent.status() <= 49 and constituent.status()  >= 41:
-                                isrconstituent = True
+			try:
+				constituent = constituent.mother()
+				cs = constituent.status()
+
+				if 21 <= cs <= 29:
+					childOfHard = True
+				if 41 <= cs <= 49:
+					childOfISS = True
+				if 51 <= cs <= 59:
+					childOfFSS = True
                         except ReferenceError:
                             break
-                    if isrconstituent == True:
-                        break
-                if isrconstituent == True:
-                    isrjetpt.fill(eventweight,Jet.pt())
+		if ( not childOfHard ) and childOfISS:
+			isrjetpt.fill(eventweight,Jet.pt())
+			nISRJets = nISRJets + 1 
+		if childOfHard and childOfFSS:
+			fsrjetpt.fill(eventweight,Jet.pt())
+			nFSRJets = nFSRJets + 1 
 
                 if Jet.pt() >= firstJetpt and Jet.pt() >= secoundJetpt:
                     secoundJetpt = firstJetpt
@@ -171,6 +184,9 @@ for cut in ptcuts:
                     secoundjetpt.fill(eventweight,secoundJetpt)
                     firstjeteta.fill(eventweight,firstJeteta)
         njets.fill(eventweight,nJets)
+	nIsrJets.fill(eventweight,min(15,nISRJets))
+	nFsrJets.fill(eventweight,min(15,nFSRJets))
+	
 
     #wirte all histograms in the output file. After they are wrote, they are getting deleted (s. write() method)
     pt.write()
@@ -182,6 +198,9 @@ for cut in ptcuts:
     firstjeteta.write()
     njets.write()
     isrjetpt.write()
+    fsrjetpt.write()
+    nIsrJets.write()
+    nFsrJets.write()
     #delete all variables, that are used again in the next loop
     del handle
     del label
