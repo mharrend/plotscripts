@@ -16,6 +16,41 @@ def getmother(particle):
     #print particle.mother().status()
     getmother(particle)
 
+PARTICLE = { 1 : "d",
+	2 : "u",
+	3 : "s",
+	4 : "c",
+	5 : "b",
+	6 : "t",
+	7 : "b'",
+	8 : "t'",
+	11 : "e",
+	12 : "nu_e",
+	13 : "mu",
+	14 : "nu_mu",
+	15 : "tau",
+	16 : "nu_tau",
+	17 : "tau'",
+	18 : "nu_tau'",
+	21 : "g",
+	22 : "y",
+	23 : "Z",
+	24 : "W",
+	25 : "H",
+	2112 : "n",
+	2212 : "p"
+	}
+	
+def getParticleName(id):
+	try:
+		if id < 0:
+			return "-" + PARTICLE[-id]
+		else:
+			return PARTICLE[id]
+	except KeyError:
+		return str(id)
+	
+
 #Mode 0: Searches for root files in dir
 #Mode 1: input files als arguments
 #Mode 2: Takes files from dCache, please give full path, e.g.
@@ -125,7 +160,10 @@ for cut in ptcuts:
     print 'Filling new jet histograms with ptcut: '+cutn+'GeV'
     enumber = 0
     print "handle_label",handle, label
-    for event in events:
+    for idx, val in enumerate(events):
+	event = val
+	print
+	print "Event #" + str(idx)
         event.getByLabel (label, handle)
         GenJets = handle.product()
         ievent = event
@@ -138,6 +176,7 @@ for cut in ptcuts:
 	nISRJets = 0
 	nFSRJets = 0
         eventweight = Infos.weight()
+		
         for Jet in GenJets:
             if Jet.pt() >= cut and abs(Jet.eta()) <= etacut:
                 #for JetConstituent in Jet.getJetConstituents():
@@ -148,31 +187,45 @@ for cut in ptcuts:
                 theta.fill(eventweight,Jet.theta())
                 energy.fill(eventweight,Jet.energy())
 		
+		#print ( "JetConstituents (" + str ( Jet.nConstituents() ) + "): "), 
+		
 		# ISR/FSR implementation
 		for constituent in Jet.getJetConstituents():
-                    childOfHard = False
-		    childOfISS = False
-		    childOfFSS = False
-                    while(True):
-			try:
-				constituent = constituent.mother()
-				cs = constituent.status()
-
-				if 21 <= cs <= 29:
-					childOfHard = True
-				if 41 <= cs <= 49:
-					childOfISS = True
-				if 51 <= cs <= 59:
-					childOfFSS = True
-                        except ReferenceError:
-                            break
-		if ( not childOfHard ) and childOfISS:
+					
+			childOfHardest = False
+			childOfISS = False
+			childOfFSS = False
+					
+			while(True):
+				try:
+					print ( getParticleName( constituent.pdgId() ) ),
+					print constituent.status(), 
+					constituent = constituent.mother()
+					cs = constituent.status()
+					
+					
+					if 21 <= cs <= 29:
+						childOfHardest = True
+						print ( "[H]" ),
+					if 41 <= cs <= 49:
+						childOfISS = True
+						print ( "[IS]" ),
+					if 51 <= cs <= 59:
+						childOfFSS = True
+						print ( "[FS]" ),
+					print (" <- "),
+				except ReferenceError:
+					print "."
+					break
+			break
+		if not childOfHardest and not childOfFSS and childOfISS:
 			isrjetpt.fill(eventweight,Jet.pt())
-			nISRJets = nISRJets + 1 
-		if childOfHard and childOfFSS:
+			nISRJets = nISRJets + 1
+			print ( "[ISR++]" ) 
+		if childOfHardest and childOfFSS:
 			fsrjetpt.fill(eventweight,Jet.pt())
 			nFSRJets = nFSRJets + 1 
-
+			print ( "[FSR++]" )
                 if Jet.pt() >= firstJetpt and Jet.pt() >= secoundJetpt:
                     secoundJetpt = firstJetpt
                     firstJetpt = Jet.pt()
@@ -183,6 +236,7 @@ for cut in ptcuts:
                     firstjetpt.fill(eventweight,firstJetpt)
                     secoundjetpt.fill(eventweight,secoundJetpt)
                     firstjeteta.fill(eventweight,firstJeteta)
+		#print "."
         njets.fill(eventweight,nJets)
 	nIsrJets.fill(eventweight,min(15,nISRJets))
 	nFsrJets.fill(eventweight,min(15,nFSRJets))
