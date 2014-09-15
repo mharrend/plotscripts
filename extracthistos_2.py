@@ -11,6 +11,35 @@ import sys
 from glob import glob
 import os
 
+USE_STDOUT_DBG = False
+USE_DIGRAPH_DBG = True
+
+nParticles = 0
+leastParticles = 99999999999
+leastParticlesIndex = -1
+
+def RecurseParticle(f, p, rec, last, index):
+	global nParticles
+	nParticles = nParticles + 1
+	lastString = last
+	if last > "":
+		lastString = last + " -> "
+	particleName = getParticleName( abs(p.pdgId()) )
+	particleString = "H" + str(rec) + "I" + str(index) + "N" + particleName
+	f.write("  " + lastString + particleString + "[label=\"" + particleName + "\"];\n")
+	n = p.numberOfDaughters();
+	for i in range(0,n):
+		RecurseParticle(f, p.daughter(i), rec + 1, particleString, i)
+
+def DiGraph(eventNum, MainConstituent):
+	f = open("event" + str(eventNum) + ".di" , 'w')
+	f.write("digraph G {\n")
+	
+	RecurseParticle(f, MainConstituent, 0, "GENERATOR", 0)
+	
+	f.write("}\n")
+
+
 def getmother(particle):
     #for constituent in constituents:
     #print particle.mother().status()
@@ -143,7 +172,7 @@ for cut in ptcuts:
     energy = Histograms("Henergy"+cutn,"Gen-Jet Energy "+cutn,100,0,600)
     firstjetpt = Histograms("HfirstJetpt"+cutn,"Pt of hardest Gen-Jet "+cutn, 100,0,300)
     firstjeteta = Histograms("H1sJeteta"+cutn,"Eta of hardest Gen-Jet "+cutn,50,-5,5)
-    secoundjetpt = Histograms("HsecoundJetpt"+cutn,"Pt of 2nd hardest Gen-Jet "+cutn, 100,0,300)
+    secondjetpt = Histograms("HsecondJetpt"+cutn,"Pt of 2nd hardest Gen-Jet "+cutn, 100,0,300)
     isrjetpt = Histograms("Hisrjetpt"+cutn, "Pt of ISR-Jets "+cutn,100,0,300)
     fsrjetpt = Histograms("Hfsrjetpt"+cutn, "Pt of FSR-Jets "+cutn,100,0,300)
     nIsrJets = Histograms("HnIsrJets"+cutn,"Number of ISR Jets per Event "+cutn, 15, -0.5, 14.5)
@@ -162,8 +191,10 @@ for cut in ptcuts:
     print "handle_label",handle, label
     for idx, val in enumerate(events):
 	event = val
-	print
-	print "Event #" + str(idx)
+	eventNum = idx
+	if USE_STDOUT_DBG:
+		print
+		print "Event #" + str(eventNum)
         event.getByLabel (label, handle)
         GenJets = handle.product()
         ievent = event
@@ -171,81 +202,103 @@ for cut in ptcuts:
         Infos = infohandle.product()
         nJets = 0
         firstJetpt = 0
-        secoundJetpt = 0
+        secondJetpt = 0
         firstJeteta = 0
 	nISRJets = 0
 	nFSRJets = 0
         eventweight = Infos.weight()
+	
+	thisEventHasBeenDiGraphed = False
 		
-        for Jet in GenJets:
-            if Jet.pt() >= cut and abs(Jet.eta()) <= etacut:
-                #for JetConstituent in Jet.getJetConstituents():
-                #        print JetConstituent.pdgId(), " no of mothers ", JetConstituent.numberOfMothers()
-                nJets = nJets + 1
-                pt.fill(eventweight,Jet.pt())
-                phi.fill(eventweight,Jet.phi())
-                theta.fill(eventweight,Jet.theta())
-                energy.fill(eventweight,Jet.energy())
-		
-		# ISR/FSR implementation
-		for constituent in Jet.getJetConstituents():
-					
-			hardest = False
-			iSS = False
-			fSS = False
-					
-			while(True):
-				try:
-					cs = abs(constituent.status())
-					print ( getParticleName( constituent.pdgId() ) ),
-					print cs,
-					
-					if 21 <= cs <= 29:
-						hardest = True
-						print ( "[H]" ),
-					if 41 <= cs <= 49:
-						iSS = True
-						print ( "[IS]" ),
-					if 51 <= cs <= 59:
-						fSS = True
-						print ( "[FS]" ),
-					print (" <- "),
-					constituent = constituent.mother()
-				except ReferenceError:
-					print "."
-					break
-			break
-		if not hardest and not fSS and iSS:
-			isrjetpt.fill(eventweight,Jet.pt())
-			nISRJets = nISRJets + 1
-			print ( "[ISR++]" ) 
-		if hardest and fSS:
-			fsrjetpt.fill(eventweight,Jet.pt())
-			nFSRJets = nFSRJets + 1 
-			print ( "[FSR++]" )
-                if Jet.pt() >= firstJetpt and Jet.pt() >= secoundJetpt:
-                    secoundJetpt = firstJetpt
-                    firstJetpt = Jet.pt()
-                    firstJeteta = Jet.eta()
-                elif Jet.pt() >= secoundJetpt and Jet.pt() <= firstJetpt:
-                    secoundJetpt = Jet.pt()
-                    enumber=enumber+1
-                    firstjetpt.fill(eventweight,firstJetpt)
-                    secoundjetpt.fill(eventweight,secoundJetpt)
-                    firstjeteta.fill(eventweight,firstJeteta)
-		#print "."
+        for idx, val in enumerate(GenJets):
+		Jet = val
+		jetNum = idx
+		if Jet.pt() >= cut and abs(Jet.eta()) <= etacut:
+			#for JetConstituent in Jet.getJetConstituents():
+			#        print JetConstituent.pdgId(), " no of mothers ", JetConstituent.numberOfMothers()
+			nJets = nJets + 1
+			pt.fill(eventweight,Jet.pt())
+			phi.fill(eventweight,Jet.phi())
+			theta.fill(eventweight,Jet.theta())
+			energy.fill(eventweight,Jet.energy())
+			
+			# ISR/FSR implementation
+			for idx, val in enumerate(Jet.getJetConstituents()):
+				constituent = val
+				contituentNum = idx	
+				hardest = False
+				iSS = False
+				fSS = False
+						
+				while(True):
+					try:
+						cs = abs(constituent.status())
+						if USE_STDOUT_DBG:
+							print ( getParticleName( constituent.pdgId() ) ),
+							print cs,
+						
+						if 21 <= cs <= 29:
+							hardest = True
+							if USE_STDOUT_DBG:
+								print ( "[H]" ),
+						if 41 <= cs <= 49:
+							iSS = True
+							if USE_STDOUT_DBG:
+								print ( "[IS]" ),
+						if 51 <= cs <= 59:
+							fSS = True
+							if USE_STDOUT_DBG:
+								print ( "[FS]" ),
+						if USE_STDOUT_DBG:
+							print (" <- "),
+						oldConstituent = constituent
+						constituent = constituent.mother()
+					except ReferenceError:
+						if USE_STDOUT_DBG:
+							print "."
+						
+						if USE_DIGRAPH_DBG and not thisEventHasBeenDiGraphed:
+							nParticles = 0
+							DiGraph(eventNum, oldConstituent)
+							print "Event#" + str(eventNum) + ": nParticles=" + str(nParticles)
+							if nParticles < leastParticles:
+								leastParticles = nParticles
+								leastParticlesIndex = eventNum
+							thisEventHasBeenDiGraphed = True
+							
+						break
+				break
+			if not hardest and not fSS and iSS:
+				isrjetpt.fill(eventweight,Jet.pt())
+				nISRJets = nISRJets + 1
+				if USE_STDOUT_DBG:
+					print ( "[ISR++]" ) 
+			if hardest and fSS:
+				fsrjetpt.fill(eventweight,Jet.pt())
+				nFSRJets = nFSRJets + 1
+				if USE_STDOUT_DBG: 
+					print ( "[FSR++]" )
+			if Jet.pt() >= firstJetpt and Jet.pt() >= secondJetpt:
+				secondJetpt = firstJetpt
+				firstJetpt = Jet.pt()
+				firstJeteta = Jet.eta()
+			elif Jet.pt() >= secondJetpt and Jet.pt() <= firstJetpt:
+				secondJetpt = Jet.pt()
+				enumber=enumber+1
+			firstjetpt.fill(eventweight,firstJetpt)
+			secondjetpt.fill(eventweight,secondJetpt)
+			firstjeteta.fill(eventweight,firstJeteta)
         njets.fill(eventweight,nJets)
 	nIsrJets.fill(eventweight,min(15,nISRJets))
 	nFsrJets.fill(eventweight,min(15,nFSRJets))
 	
-
-    #wirte all histograms in the output file. After they are wrote, they are getting deleted (s. write() method)
+    #write all histograms in the output file. After they are wrote, they are getting deleted (s. write() method)
     pt.write()
     phi.write()
     theta.write()
     energy.write()
     firstjetpt.write()
-    secoundjetpt.write()
+    secondjetpt.write()
     firstjeteta.write()
     njets.write()
     isrjetpt.write()
@@ -257,3 +310,5 @@ for cut in ptcuts:
     del label
     del infohandle
     del events
+    
+    print "Least Particles: Event#" + str(leastParticlesIndex) + " (Particles=" + str(leastParticles) + ")"
