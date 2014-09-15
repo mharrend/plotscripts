@@ -187,42 +187,39 @@ for cut in ptcuts:
                 theta.fill(eventweight,Jet.theta())
                 energy.fill(eventweight,Jet.energy())
 		
-		#print ( "JetConstituents (" + str ( Jet.nConstituents() ) + "): "), 
-		
 		# ISR/FSR implementation
 		for constituent in Jet.getJetConstituents():
 					
-			childOfHardest = False
-			childOfISS = False
-			childOfFSS = False
+			hardest = False
+			iSS = False
+			fSS = False
 					
 			while(True):
 				try:
+					cs = abs(constituent.status())
 					print ( getParticleName( constituent.pdgId() ) ),
-					print constituent.status(), 
-					constituent = constituent.mother()
-					cs = constituent.status()
-					
+					print cs,
 					
 					if 21 <= cs <= 29:
-						childOfHardest = True
+						hardest = True
 						print ( "[H]" ),
 					if 41 <= cs <= 49:
-						childOfISS = True
+						iSS = True
 						print ( "[IS]" ),
 					if 51 <= cs <= 59:
-						childOfFSS = True
+						fSS = True
 						print ( "[FS]" ),
 					print (" <- "),
+					constituent = constituent.mother()
 				except ReferenceError:
 					print "."
 					break
 			break
-		if not childOfHardest and not childOfFSS and childOfISS:
+		if not hardest and not fSS and iSS:
 			isrjetpt.fill(eventweight,Jet.pt())
 			nISRJets = nISRJets + 1
 			print ( "[ISR++]" ) 
-		if childOfHardest and childOfFSS:
+		if hardest and fSS:
 			fsrjetpt.fill(eventweight,Jet.pt())
 			nFSRJets = nFSRJets + 1 
 			print ( "[FSR++]" )
