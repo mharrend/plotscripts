@@ -14,30 +14,62 @@ import os
 USE_STDOUT_DBG = False
 USE_DIGRAPH_DBG = True
 
-nParticles = 0
-leastParticles = 99999999999
-leastParticlesIndex = -1
 
 def RecurseParticle(f, p, rec, last, index):
-	global nParticles
-	nParticles = nParticles + 1
-	lastString = last
-	if last > "":
-		lastString = last + " -> "
-	particleName = getParticleName( abs(p.pdgId()) )
-	particleString = "H" + str(rec) + "I" + str(index) + "N" + particleName
-	f.write("  " + lastString + particleString + "[label=\"" + particleName + "\"];\n")
+	
+	particleName = getParticleName( p.pdgId() )
+	cs = abs(p.status())
+	
+	typeString = str(cs)
+	colorString = "black"
+	fillColorString = "white"
+	styleString = ""
+	
+	if cs == 4:
+		styleString = ", style=filled"
+		fillColorString="deeppink"
+	if 21 <= cs <= 29:
+		hardest = True
+		#typeString = "H"
+		#colorString = "yellow"
+		fillColorString="yellow"
+		styleString = ", style=filled"
+	elif 41 <= cs <= 49:
+		iSS = True
+		#typeString = "ISS"
+		#colorString = "red"
+		fillColorString="red"
+		styleString = ", style=filled"
+	elif 51 <= cs <= 59:
+		fSS = True
+		#typeString = "FSS"
+		#colorString = "blue"
+		fillColorString="lightblue"
+		styleString = ", style=filled"
+	#else:
+		#typeString = str(cs)
+	
+	particleQualifier = last + "H" + str(rec) + "I" + str(index)
+	particleLabel = particleName
+	
+	attrib = styleString + ", color=" + colorString + ", fillcolor=" + fillColorString
+	
+	f.write(particleQualifier + "[label=\"" + particleLabel + "[" + typeString + "]" + "\"" + attrib + "];\n")
+	if last <> "":
+		f.write(last + " -> " + particleQualifier + ";\n")
 	n = p.numberOfDaughters();
 	for i in range(0,n):
-		RecurseParticle(f, p.daughter(i), rec + 1, particleString, i)
+		RecurseParticle(f, p.daughter(i), rec + 1, particleQualifier, i)
 
 def DiGraph(eventNum, MainConstituent):
 	f = open("event" + str(eventNum) + ".di" , 'w')
 	f.write("digraph G {\n")
+	f.write("graph [nodesep=0.01]\n") 
 	
-	RecurseParticle(f, MainConstituent, 0, "GENERATOR", 0)
+	RecurseParticle(f, MainConstituent, 0, "", 0)
 	
 	f.write("}\n")
+	f.close()
 
 
 def getmother(particle):
@@ -110,7 +142,8 @@ class Histograms(object):
 #-------------------------------------------------#
 #---------------- Cut definitions ----------------#
 # ptcuts is a list of different cut values
-ptcuts = [25., 30., 50., 100.] 
+#ptcuts = [25., 30., 50., 100.] 
+ptcuts = [ 25. ]
 etacut = 2.5
 #-------------------------------------------------#
 #First use FW Lite from CMSSW
@@ -158,7 +191,9 @@ else:
     exit()
 print inputlist
 
-for cut in ptcuts:
+for idx, val in enumerate(ptcuts):
+    cut = val
+    currentCut = idx
 
     events = Events (inputlist)
 
@@ -190,6 +225,8 @@ for cut in ptcuts:
     enumber = 0
     print "handle_label",handle, label
     for idx, val in enumerate(events):
+	#if idx <> 1:
+	#	continue
 	event = val
 	eventNum = idx
 	if USE_STDOUT_DBG:
@@ -258,12 +295,7 @@ for cut in ptcuts:
 							print "."
 						
 						if USE_DIGRAPH_DBG and not thisEventHasBeenDiGraphed:
-							nParticles = 0
 							DiGraph(eventNum, oldConstituent)
-							print "Event#" + str(eventNum) + ": nParticles=" + str(nParticles)
-							if nParticles < leastParticles:
-								leastParticles = nParticles
-								leastParticlesIndex = eventNum
 							thisEventHasBeenDiGraphed = True
 							
 						break
@@ -311,4 +343,3 @@ for cut in ptcuts:
     del infohandle
     del events
     
-    print "Least Particles: Event#" + str(leastParticlesIndex) + " (Particles=" + str(leastParticles) + ")"
