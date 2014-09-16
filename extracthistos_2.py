@@ -11,7 +11,7 @@ import sys
 from glob import glob
 import os
 
-USE_STDOUT_DBG = False
+USE_STDOUT_DBG = True
 USE_DIGRAPH_DBG = True
 
 
@@ -164,7 +164,7 @@ etacut = 2.5
 cmsswbase = TString.getenv("CMSSW_BASE")
 
 print 'Loading FW Lite setup.\n'
-gSystem.Load("libFWCoreFWLite.so") 
+gSystem.Load("libFWCoreFWLite.so")
 ROOT.AutoLibraryLoader.enable()
 gSystem.Load("libDataFormatsFWLite.so")
 gSystem.Load("libDataFormatsPatCandidates.so")
@@ -243,13 +243,17 @@ for idx, val in enumerate(ptcuts):
 	sys.stdout.flush()
     percentage20 = 0 
     for idx, val in enumerate(events):
-	percentageNow = 20. * idx / events.size()
-	if percentageNow >= percentage20+1 and not USE_STDOUT_DBG:
-		percentage20 = percentage20 + 1 
-		sys.stdout.write('.')
-		sys.stdout.flush()
-	#if idx <> 1:
-	#	continue
+
+	if USE_STDOUT_DBG:
+		print "Event #" + str(idx)
+	else:
+		percentageNow = 20. * idx / events.size()
+		if percentageNow >= percentage20+1:
+			percentage20 = percentage20 + 1 
+			sys.stdout.write('.')
+			sys.stdout.flush()	
+	if idx <> 1:
+		continue
 	event = val
 	eventNum = idx
         event.getByLabel (label, handle)
@@ -280,46 +284,50 @@ for idx, val in enumerate(ptcuts):
 			energy.fill(eventweight,Jet.energy())
 			
 			# ISR/FSR implementation
-			for idx, val in enumerate(Jet.getJetConstituents()):
-				constituent = val
-				contituentNum = idx	
-				hardest = False
-				iSS = False
-				fSS = False
-						
-				while(True):
-					try:
-						cs = abs(constituent.status())
+			#for idx, val in enumerate(Jet.getJetConstituents()):
+			
+			jetMother = Jet.getJetConstituents()
+			
+			hardest = False
+			iSS = False
+			fSS = False
+					
+			particle = jetMother[0]
+					
+			while(True):
+				oldParticle = particle
+				try:
+					cs = abs(particle.status())
+					if USE_STDOUT_DBG:
+						print ( getParticleName( particle.pdgId() ) ),
+						print cs,
+					
+					if 21 <= cs <= 29:
+						hardest = True
 						if USE_STDOUT_DBG:
-							print ( getParticleName( constituent.pdgId() ) ),
-							print cs,
-						
-						if 21 <= cs <= 29:
-							hardest = True
-							if USE_STDOUT_DBG:
-								print ( "[H]" ),
-						if 41 <= cs <= 49:
-							iSS = True
-							if USE_STDOUT_DBG:
-								print ( "[IS]" ),
-						if 51 <= cs <= 59:
-							fSS = True
-							if USE_STDOUT_DBG:
-								print ( "[FS]" ),
+							print ( "[H]" ),
+					if 41 <= cs <= 49:
+						iSS = True
 						if USE_STDOUT_DBG:
-							print (" <- "),
-						oldConstituent = constituent
-						constituent = constituent.mother()
-					except ReferenceError:
+							print ( "[IS]" ),
+					if 51 <= cs <= 59:
+						fSS = True
 						if USE_STDOUT_DBG:
-							print "."
+							print ( "[FS]" ),
+					if USE_STDOUT_DBG:
+						print (" <- "),
+					particle = particle.mother()
+					particle.mother() # this shall throw
+				except ReferenceError:
+					if USE_STDOUT_DBG:
+						print "."
+					
+					if USE_DIGRAPH_DBG and not thisEventHasBeenDiGraphed:
+						DiGraph(eventNum, oldParticle)
+						thisEventHasBeenDiGraphed = True
 						
-						if USE_DIGRAPH_DBG and not thisEventHasBeenDiGraphed:
-							DiGraph(eventNum, oldConstituent)
-							thisEventHasBeenDiGraphed = True
-							
-						break
-				break
+					break
+				#break
 			if not hardest and not fSS and iSS:
 				isrjetpt.fill(eventweight,Jet.pt())
 				nISRJets = nISRJets + 1
