@@ -34,6 +34,9 @@ def RecurseParticle(f, p, rec, last, index):
 		#colorString = "yellow"
 		fillColorString="yellow"
 		styleString = ", style=filled"
+	elif 31 <= cs <= 39:
+		fillColorString="green"
+		styleString = ", style=filled"
 	elif 41 <= cs <= 49:
 		iSS = True
 		#typeString = "ISS"
@@ -45,6 +48,16 @@ def RecurseParticle(f, p, rec, last, index):
 		#typeString = "FSS"
 		#colorString = "blue"
 		fillColorString="lightblue"
+		styleString = ", style=filled"
+	elif 61 <= cs <= 69:
+		#typeString = "FSS"
+		#colorString = "blue"
+		fillColorString="brown"
+		styleString = ", style=filled"
+	elif 71 <= cs <= 79:
+		#typeString = "FSS"
+		#colorString = "blue"
+		fillColorString="gray"
 		styleString = ", style=filled"
 	#else:
 		#typeString = str(cs)
@@ -224,14 +237,21 @@ for idx, val in enumerate(ptcuts):
     print 'Filling new jet histograms with ptcut: '+cutn+'GeV'
     enumber = 0
     print "handle_label",handle, label
+    print "Total Events: " + str(events.size())
+    if not USE_STDOUT_DBG:
+    	sys.stdout.write("[                    ]\r[")
+	sys.stdout.flush()
+    percentage20 = 0 
     for idx, val in enumerate(events):
+	percentageNow = 20. * idx / events.size()
+	if percentageNow >= percentage20+1 and not USE_STDOUT_DBG:
+		percentage20 = percentage20 + 1 
+		sys.stdout.write('.')
+		sys.stdout.flush()
 	#if idx <> 1:
 	#	continue
 	event = val
 	eventNum = idx
-	if USE_STDOUT_DBG:
-		print
-		print "Event #" + str(eventNum)
         event.getByLabel (label, handle)
         GenJets = handle.product()
         ievent = event
@@ -342,4 +362,6 @@ for idx, val in enumerate(ptcuts):
     del label
     del infohandle
     del events
+    sys.stdout.write('.\n')
+    sys.stdout.flush()
     
