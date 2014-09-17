@@ -1,42 +1,22 @@
 #Script to extract histograms from the Root Tree, that is produced by Pythia8 in CMSSW
 #Usage: TODO
-#The script, if config.mode 0 is set searches for .root files in the dir the script is running and uses them as inputs.
-#This script allows also to get root files directly from the dCache if config.mode 2 is set.
-#Currently the only execption to this is, are root-File that are ending with *-extracted.root
+
 from DataFormats.FWLite import Events, Handle
-import ROOT
 from math import pi
-from ROOT import TH1F, TFile, TTree, TString, gSystem
 import sys 
 from glob import glob
 import os
+
+import ROOT
+from ROOT import TH1F, TFile, TTree, TString, gSystem
+
 
 # sibling modules
 import config
 import particles
 import visual
-
-#----------- Class for Histograms ----------------#
-# initialize histograms the same way like when using TH1F only with Histograms
-# the constuctor initializes 3 TH1F objects.
-class Histograms(object):
-    def __init__(self, inhalt, title, nbins, minbin, maxbin):
-        self.pos = TH1F(inhalt+"pos",title+" with pos. weights",nbins,minbin,maxbin)
-        self.neg = TH1F(inhalt+"neg",title+" with neg. weights",nbins,minbin,maxbin)
-        self.combined = TH1F(inhalt,title,nbins,minbin,maxbin)
-    def fill(self,weight,value):
-        if weight >0:
-            self.pos.Fill(value,1.)
-            self.combined.Fill(value,1.)
-        elif weight < 0:
-            self.neg.Fill(value,-1.)
-            self.combined.Fill(value,-1.)
-    def write(self):
-        outputfile.WriteTObject(self.pos)
-        outputfile.WriteTObject(self.neg)
-        outputfile.WriteTObject(self.combined)
-        del self
-
+import histogram
+Histogram = histogram.Histogram
 
 #-------------------------------------------------#
 #First use FW Lite from CMSSW
@@ -89,20 +69,20 @@ for currentCutIndex, currentCut in enumerate(config.pTCuts):
     events = Events (inputlist)
 
     currentCutString = str(currentCut) #variable for names of histograms
-    #Definition of the Histograms
-    #Jet Histograms
-    njets = Histograms ("HnJets"+currentCutString, "Number of Jets "+currentCutString, 15, -0.5, 14.5)
-    pt = Histograms("Hpt"+currentCutString,"Gen-Jet pt "+currentCutString,100,0,300)
-    phi = Histograms("Hphi"+currentCutString,"Gen-Jet Phi "+currentCutString,50,-pi,pi)
-    theta = Histograms("Htheta"+currentCutString,"Gen-Jet Theta "+currentCutString,50,0,pi)
-    energy = Histograms("Henergy"+currentCutString,"Gen-Jet Energy "+currentCutString,100,0,600)
-    firstjetpt = Histograms("HfirstJetpt"+currentCutString,"Pt of hardest Gen-Jet "+currentCutString, 100,0,300)
-    firstjeteta = Histograms("H1sJeteta"+currentCutString,"Eta of hardest Gen-Jet "+currentCutString,50,-5,5)
-    secondjetpt = Histograms("HsecondJetpt"+currentCutString,"Pt of 2nd hardest Gen-Jet "+currentCutString, 100,0,300)
-    isrjetpt = Histograms("Hisrjetpt"+currentCutString, "Pt of ISR-Jets "+currentCutString,100,0,300)
-    fsrjetpt = Histograms("Hfsrjetpt"+currentCutString, "Pt of FSR-Jets "+currentCutString,100,0,300)
-    nIsrJets = Histograms("HnIsrJets"+currentCutString,"Number of ISR Jets per Event "+currentCutString, 15, -0.5, 14.5)
-    nFsrJets = Histograms("HnFsrJets"+currentCutString,"Number of FSR Jets per Event "+currentCutString, 15, -0.5, 14.5)
+    #Definition of the Histogram
+    #Jet Histogram
+    njets = Histogram (outputfile, "HnJets"+currentCutString, "Number of Jets "+currentCutString, 15, -0.5, 14.5)
+    pt = Histogram(outputfile, "Hpt"+currentCutString,"Gen-Jet pt "+currentCutString,100,0,300)
+    phi = Histogram(outputfile, "Hphi"+currentCutString,"Gen-Jet Phi "+currentCutString,50,-pi,pi)
+    theta = Histogram(outputfile, "Htheta"+currentCutString,"Gen-Jet Theta "+currentCutString,50,0,pi)
+    energy = Histogram(outputfile, "Henergy"+currentCutString,"Gen-Jet Energy "+currentCutString,100,0,600)
+    firstjetpt = Histogram(outputfile, "HfirstJetpt"+currentCutString,"Pt of hardest Gen-Jet "+currentCutString, 100,0,300)
+    firstjeteta = Histogram(outputfile, "H1sJeteta"+currentCutString,"Eta of hardest Gen-Jet "+currentCutString,50,-5,5)
+    secondjetpt = Histogram(outputfile, "HsecondJetpt"+currentCutString,"Pt of 2nd hardest Gen-Jet "+currentCutString, 100,0,300)
+    isrjetpt = Histogram(outputfile, "Hisrjetpt"+currentCutString, "Pt of ISR-Jets "+currentCutString,100,0,300)
+    fsrjetpt = Histogram(outputfile, "Hfsrjetpt"+currentCutString, "Pt of FSR-Jets "+currentCutString,100,0,300)
+    nIsrJets = Histogram(outputfile, "HnIsrJets"+currentCutString,"Number of ISR Jets per Event "+currentCutString, 15, -0.5, 14.5)
+    nFsrJets = Histogram(outputfile, "HnFsrJets"+currentCutString,"Number of FSR Jets per Event "+currentCutString, 15, -0.5, 14.5)
 
     # create handle outside of loop
     # Handle and lable are pointing at the Branch you want
@@ -111,7 +91,7 @@ for currentCutIndex, currentCut in enumerate(config.pTCuts):
     infohandle = Handle ('<GenEventInfoProduct>')
 
     #ROOT.gROOT.SetStyle('Plain') # white background
-    #Loop through all Events and Fill the Histograms
+    #Loop through all Events and Fill the Histogram
     print 'Filling new jet histograms with ptcut: '+currentCutString+'GeV'
     enumber = 0
     print "handle_label",handle, label
