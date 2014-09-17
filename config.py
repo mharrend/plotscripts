@@ -1,11 +1,17 @@
 # Config
 
 # display verbose debug output
-USE_STDOUT_DBG = True
+useDebugOutput = True
  
 # Enable per event visualization:
 # -> create graphViz files (*.di) and images (*.png) for each event
-USE_DIGRAPH_DBG = True
+useVisualization = True
 
 # deprecated: mode - TODO: replaceMe
-MODE = 1
+mode = 1
+
+#---------------- Cut definitions ----------------#
+# ptcuts is a list of different cut values
+#ptcuts = [25., 30., 50., 100.] 
+pTCuts = [ 25. ]
+etaCut = 2.5

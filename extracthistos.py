@@ -1,7 +1,7 @@
 #Script to extract histograms from the Root Tree, that is produced by Pythia8 in CMSSW
 #Usage: TODO
-#The script, if config.MODE 0 is set searches for .root files in the dir the script is running and uses them as inputs.
-#This script allows also to get root files directly from the dCache if config.MODE 2 is set.
+#The script, if config.mode 0 is set searches for .root files in the dir the script is running and uses them as inputs.
+#This script allows also to get root files directly from the dCache if config.mode 2 is set.
 #Currently the only execption to this is, are root-File that are ending with *-extracted.root
 from DataFormats.FWLite import Events, Handle
 import ROOT
@@ -37,12 +37,7 @@ class Histograms(object):
         outputfile.WriteTObject(self.combined)
         del self
 
-#-------------------------------------------------#
-#---------------- Cut definitions ----------------#
-# ptcuts is a list of different cut values
-#ptcuts = [25., 30., 50., 100.] 
-ptcuts = [ 25. ]
-etacut = 2.5
+
 #-------------------------------------------------#
 #First use FW Lite from CMSSW
 #-------------------- FW Lite --------------------#
@@ -59,7 +54,7 @@ outputfile = TFile(sys.argv[1],"RECREATE")
 
 #Read in the inputfiles for every loop, else it won't work
 inputlist = []
-if config.MODE == 0:
+if config.mode == 0:
     if len(sys.argv) > 2:
         dirs = sys.argv[2:]
     else:
@@ -68,7 +63,7 @@ if config.MODE == 0:
         for f in glob(os.path.join(d, '*.root')):
             if f[-15:] != '-extracted.root' and f != sys.argv[1]:
                 inputlist.append(f)
-elif config.MODE == 1:
+elif config.mode == 1:
     for arg in sys.argv[2:]:
         if arg[-5:] == '.root':
             inputlist.append(arg)
@@ -76,7 +71,7 @@ elif config.MODE == 1:
             print "One or more of the Arguments are no .root file. Exiting!"
             exit()
 
-elif config.MODE == 2:
+elif config.mode == 2:
     for arg in sys.argv[2:]:
         if arg[-5:] == '.root':
             inputlist.append('root://xrootd.ba.infn.it//' + arg)
@@ -89,27 +84,25 @@ else:
     exit()
 print inputlist
 
-for idx, val in enumerate(ptcuts):
-    cut = val
-    currentCut = idx
+for currentCutIndex, currentCut in enumerate(config.pTCuts):
 
     events = Events (inputlist)
 
-    cutn = str(cut) #variable for names of histograms
+    currentCutString = str(currentCut) #variable for names of histograms
     #Definition of the Histograms
     #Jet Histograms
-    njets = Histograms ("HnJets"+cutn, "Number of Jets "+cutn, 15, -0.5, 14.5)
-    pt = Histograms("Hpt"+cutn,"Gen-Jet pt "+cutn,100,0,300)
-    phi = Histograms("Hphi"+cutn,"Gen-Jet Phi "+cutn,50,-pi,pi)
-    theta = Histograms("Htheta"+cutn,"Gen-Jet Theta "+cutn,50,0,pi)
-    energy = Histograms("Henergy"+cutn,"Gen-Jet Energy "+cutn,100,0,600)
-    firstjetpt = Histograms("HfirstJetpt"+cutn,"Pt of hardest Gen-Jet "+cutn, 100,0,300)
-    firstjeteta = Histograms("H1sJeteta"+cutn,"Eta of hardest Gen-Jet "+cutn,50,-5,5)
-    secondjetpt = Histograms("HsecondJetpt"+cutn,"Pt of 2nd hardest Gen-Jet "+cutn, 100,0,300)
-    isrjetpt = Histograms("Hisrjetpt"+cutn, "Pt of ISR-Jets "+cutn,100,0,300)
-    fsrjetpt = Histograms("Hfsrjetpt"+cutn, "Pt of FSR-Jets "+cutn,100,0,300)
-    nIsrJets = Histograms("HnIsrJets"+cutn,"Number of ISR Jets per Event "+cutn, 15, -0.5, 14.5)
-    nFsrJets = Histograms("HnFsrJets"+cutn,"Number of FSR Jets per Event "+cutn, 15, -0.5, 14.5)
+    njets = Histograms ("HnJets"+currentCutString, "Number of Jets "+currentCutString, 15, -0.5, 14.5)
+    pt = Histograms("Hpt"+currentCutString,"Gen-Jet pt "+currentCutString,100,0,300)
+    phi = Histograms("Hphi"+currentCutString,"Gen-Jet Phi "+currentCutString,50,-pi,pi)
+    theta = Histograms("Htheta"+currentCutString,"Gen-Jet Theta "+currentCutString,50,0,pi)
+    energy = Histograms("Henergy"+currentCutString,"Gen-Jet Energy "+currentCutString,100,0,600)
+    firstjetpt = Histograms("HfirstJetpt"+currentCutString,"Pt of hardest Gen-Jet "+currentCutString, 100,0,300)
+    firstjeteta = Histograms("H1sJeteta"+currentCutString,"Eta of hardest Gen-Jet "+currentCutString,50,-5,5)
+    secondjetpt = Histograms("HsecondJetpt"+currentCutString,"Pt of 2nd hardest Gen-Jet "+currentCutString, 100,0,300)
+    isrjetpt = Histograms("Hisrjetpt"+currentCutString, "Pt of ISR-Jets "+currentCutString,100,0,300)
+    fsrjetpt = Histograms("Hfsrjetpt"+currentCutString, "Pt of FSR-Jets "+currentCutString,100,0,300)
+    nIsrJets = Histograms("HnIsrJets"+currentCutString,"Number of ISR Jets per Event "+currentCutString, 15, -0.5, 14.5)
+    nFsrJets = Histograms("HnFsrJets"+currentCutString,"Number of FSR Jets per Event "+currentCutString, 15, -0.5, 14.5)
 
     # create handle outside of loop
     # Handle and lable are pointing at the Branch you want
@@ -119,32 +112,29 @@ for idx, val in enumerate(ptcuts):
 
     #ROOT.gROOT.SetStyle('Plain') # white background
     #Loop through all Events and Fill the Histograms
-    print 'Filling new jet histograms with ptcut: '+cutn+'GeV'
+    print 'Filling new jet histograms with ptcut: '+currentCutString+'GeV'
     enumber = 0
     print "handle_label",handle, label
     print "Total Events: " + str(events.size())
-    if not config.USE_STDOUT_DBG:
+    if not config.useDebugOutput:
     	sys.stdout.write("[                    ]\r[")
 	sys.stdout.flush()
     percentage20 = 0 
-    for idx, val in enumerate(events):
+    for currentEventIndex, currentEvent in enumerate(events):
 
-	if config.USE_STDOUT_DBG:
-		print "Event #" + str(idx)
+	if config.useDebugOutput:
+		print "Event #" + str(currentEventIndex)
 	else:
-		percentageNow = 20. * idx / events.size()
+		percentageNow = 20. * currentEventIndex / events.size()
 		if percentageNow >= percentage20+1:
 			percentage20 = percentage20 + 1 
 			sys.stdout.write('.')
 			sys.stdout.flush()	
-	if idx <> 1:
+	if currentEventIndex <> 1:
 		continue
-	event = val
-	eventNum = idx
-        event.getByLabel (label, handle)
+        currentEvent.getByLabel (label, handle)
         GenJets = handle.product()
-        ievent = event
-        ievent.getByLabel ("generator", infohandle)
+        currentEvent.getByLabel ("generator", infohandle)
         Infos = infohandle.product()
         nJets = 0
         firstJetpt = 0
@@ -156,22 +146,16 @@ for idx, val in enumerate(ptcuts):
 	
 	thisEventHasBeenDiGraphed = False
 		
-        for idx, val in enumerate(GenJets):
-		Jet = val
-		jetNum = idx
-		if Jet.pt() >= cut and abs(Jet.eta()) <= etacut:
-			#for JetConstituent in Jet.getJetConstituents():
-			#        print JetConstituent.pdgId(), " no of mothers ", JetConstituent.numberOfMothers()
+        for currentJetIndex, currentJet in enumerate(GenJets):
+		if currentJet.pt() >= currentCut and abs(currentJet.eta()) <= config.etaCut:
 			nJets = nJets + 1
-			pt.fill(eventweight,Jet.pt())
-			phi.fill(eventweight,Jet.phi())
-			theta.fill(eventweight,Jet.theta())
-			energy.fill(eventweight,Jet.energy())
+			pt.fill(eventweight,currentJet.pt())
+			phi.fill(eventweight,currentJet.phi())
+			theta.fill(eventweight,currentJet.theta())
+			energy.fill(eventweight,currentJet.energy())
 			
-			# ISR/FSR implementation
-			#for idx, val in enumerate(Jet.getJetConstituents()):
-			
-			jetMother = Jet.getJetConstituents()
+			# ISR/FSR implementation		
+			jetMother = currentJet.getJetConstituents()
 			
 			hardest = False
 			iSS = False
@@ -183,52 +167,52 @@ for idx, val in enumerate(ptcuts):
 				oldParticle = particle
 				try:
 					cs = abs(particle.status())
-					if config.USE_STDOUT_DBG:
+					if config.useDebugOutput:
 						print ( particles.getParticleName( particle.pdgId() ) ),
 						print cs,
 					
 					if 21 <= cs <= 29:
 						hardest = True
-						if config.USE_STDOUT_DBG:
+						if config.useDebugOutput:
 							print ( "[H]" ),
 					if 41 <= cs <= 49:
 						iSS = True
-						if config.USE_STDOUT_DBG:
+						if config.useDebugOutput:
 							print ( "[IS]" ),
 					if 51 <= cs <= 59:
 						fSS = True
-						if config.USE_STDOUT_DBG:
+						if config.useDebugOutput:
 							print ( "[FS]" ),
-					if config.USE_STDOUT_DBG:
+					if config.useDebugOutput:
 						print (" <- "),
 					particle = particle.mother()
 					particle.mother() # this shall throw
 				except ReferenceError:
-					if config.USE_STDOUT_DBG:
+					if config.useDebugOutput:
 						print "."
 					
-					if config.USE_DIGRAPH_DBG and not thisEventHasBeenDiGraphed:
-						visual.GraphViz(eventNum, oldParticle)
+					if config.useVisualization and not thisEventHasBeenDiGraphed:
+						visual.GraphViz(currentEventIndex, oldParticle)
 						thisEventHasBeenDiGraphed = True
 						
 					break
 				#break
 			if not hardest and not fSS and iSS:
-				isrjetpt.fill(eventweight,Jet.pt())
+				isrjetpt.fill(eventweight,currentJet.pt())
 				nISRJets = nISRJets + 1
-				if config.USE_STDOUT_DBG:
+				if config.useDebugOutput:
 					print ( "[ISR++]" ) 
 			if hardest and fSS:
-				fsrjetpt.fill(eventweight,Jet.pt())
+				fsrjetpt.fill(eventweight,currentJet.pt())
 				nFSRJets = nFSRJets + 1
-				if config.USE_STDOUT_DBG: 
+				if config.useDebugOutput: 
 					print ( "[FSR++]" )
-			if Jet.pt() >= firstJetpt and Jet.pt() >= secondJetpt:
+			if currentJet.pt() >= firstJetpt and currentJet.pt() >= secondJetpt:
 				secondJetpt = firstJetpt
-				firstJetpt = Jet.pt()
-				firstJeteta = Jet.eta()
-			elif Jet.pt() >= secondJetpt and Jet.pt() <= firstJetpt:
-				secondJetpt = Jet.pt()
+				firstJetpt = currentJet.pt()
+				firstJeteta = currentJet.eta()
+			elif currentJet.pt() >= secondJetpt and currentJet.pt() <= firstJetpt:
+				secondJetpt = currentJet.pt()
 				enumber=enumber+1
 			firstjetpt.fill(eventweight,firstJetpt)
 			secondjetpt.fill(eventweight,secondJetpt)
