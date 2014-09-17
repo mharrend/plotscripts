@@ -1,0 +1,8 @@
+# reproducable file types:
+*.root
+*.di
+*.png
+
+# kate temp files:
+*.*~
+*~
