@@ -1,7 +1,7 @@
 #Script to extract histograms from the Root Tree, that is produced by Pythia8 in CMSSW
-#Usage: python extracthistos_2.py output.root
-#The script, if mode 0 is set searches for .root files in the dir the script is running and uses them as inputs.
-#This script allows also to get root files directly from the dCache if mode 2 is set.
+#Usage: TODO
+#The script, if config.MODE 0 is set searches for .root files in the dir the script is running and uses them as inputs.
+#This script allows also to get root files directly from the dCache if config.MODE 2 is set.
 #Currently the only execption to this is, are root-File that are ending with *-extracted.root
 from DataFormats.FWLite import Events, Handle
 import ROOT
@@ -11,133 +11,10 @@ import sys
 from glob import glob
 import os
 
-# Config
-
-# display verbose debug output
-USE_STDOUT_DBG = True
- 
-# Enable per event visualization:
-# -> create graphViz files (*.di) and images (*.png) for each event
-USE_DIGRAPH_DBG = True
-
-
-MODE = 1
-
-#
-# Visualization
-# 
-def DiGraph(eventNum, MainConstituent):
-	f = open("event" + str(eventNum) + ".di" , 'w')
-	f.write("digraph G {\n")
-	f.write("graph [nodesep=0.01]\n") 
-	
-	DiGraph_RecurseParticle(f, MainConstituent, 0, "", 0)
-	
-	f.write("}\n")
-	f.close()
-	
-def DiGraph_RecurseParticle(f, p, rec, last, index):
-	
-	particleName = getParticleName( p.pdgId() )
-	cs = abs(p.status())
-	
-	typeString = str(cs)
-	colorString = "black"
-	fillColorString = "white"
-	styleString = ""
-	
-	if cs == 4:
-		styleString = ", style=filled"
-		fillColorString="deeppink"
-	if 21 <= cs <= 29:
-		hardest = True
-		#typeString = "H"
-		#colorString = "yellow"
-		fillColorString="yellow"
-		styleString = ", style=filled"
-	elif 31 <= cs <= 39:
-		fillColorString="green"
-		styleString = ", style=filled"
-	elif 41 <= cs <= 49:
-		iSS = True
-		#typeString = "ISS"
-		#colorString = "red"
-		fillColorString="red"
-		styleString = ", style=filled"
-	elif 51 <= cs <= 59:
-		fSS = True
-		#typeString = "FSS"
-		#colorString = "blue"
-		fillColorString="lightblue"
-		styleString = ", style=filled"
-	elif 61 <= cs <= 69:
-		#typeString = "FSS"
-		#colorString = "blue"
-		fillColorString="brown"
-		styleString = ", style=filled"
-	elif 71 <= cs <= 79:
-		#typeString = "FSS"
-		#colorString = "blue"
-		fillColorString="gray"
-		styleString = ", style=filled"
-	#else:
-		#typeString = str(cs)
-	
-	particleQualifier = last + "H" + str(rec) + "I" + str(index)
-	particleLabel = particleName
-	
-	attrib = styleString + ", color=" + colorString + ", fillcolor=" + fillColorString
-	
-	f.write(particleQualifier + "[label=\"" + particleLabel + "[" + typeString + "]" + "\"" + attrib + "];\n")
-	if last <> "":
-		f.write(last + " -> " + particleQualifier + ";\n")
-	n = p.numberOfDaughters();
-	for i in range(0,n):
-		DiGraph_RecurseParticle(f, p.daughter(i), rec + 1, particleQualifier, i)
-
-# Use human readable particle names for pdgIds according to 
-# http://pdg.lbl.gov/2014/reviews/rpp2014-rev-monte-carlo-numbering.pdf
-PARTICLE = { 1 : "d",
-	2 : "u",
-	3 : "s",
-	4 : "c",
-	5 : "b",
-	6 : "t",
-	7 : "b'",
-	8 : "t'",
-	11 : "e",
-	12 : "nu_e",
-	13 : "mu",
-	14 : "nu_mu",
-	15 : "tau",
-	16 : "nu_tau",
-	17 : "tau'",
-	18 : "nu_tau'",
-	21 : "g",
-	22 : "y",
-	23 : "Z",
-	24 : "W",
-	25 : "H",
-	2112 : "n",
-	2212 : "p"
-	}
-	
-# Get human readable particle name by PdgId
-def getParticleName(pdgId):
-	try:
-		if pdgId < 0:
-			return "-" + PARTICLE[-pdgId]
-		else:
-			return PARTICLE[pdgId]
-	except KeyError:
-		return str(pdgId)
-	
-
-#Mode 0: Searches for root files in dir
-#Mode 1: input files als arguments
-#Mode 2: Takes files from dCache, please give full path, e.g.
-# /store/user/mharrend/FxFx_4FS_tt_0Jet_max1Jet_8TeV_CTEQ6M_0/FxFx_4FS_tt_0Jet_max1Jet_8TeV_CTEQ6M_0/f5ba0ca3f4cd3e3e394789a8eae55065/tt0JetFxFx8TeVCTEQ6M_1_1_fgZ.root
-mode = 1
+# sibling modules
+import config
+import particles
+import visual
 
 #----------- Class for Histograms ----------------#
 # initialize histograms the same way like when using TH1F only with Histograms
@@ -182,7 +59,7 @@ outputfile = TFile(sys.argv[1],"RECREATE")
 
 #Read in the inputfiles for every loop, else it won't work
 inputlist = []
-if mode == 0:
+if config.MODE == 0:
     if len(sys.argv) > 2:
         dirs = sys.argv[2:]
     else:
@@ -191,7 +68,7 @@ if mode == 0:
         for f in glob(os.path.join(d, '*.root')):
             if f[-15:] != '-extracted.root' and f != sys.argv[1]:
                 inputlist.append(f)
-elif mode == 1:
+elif config.MODE == 1:
     for arg in sys.argv[2:]:
         if arg[-5:] == '.root':
             inputlist.append(arg)
@@ -199,7 +76,7 @@ elif mode == 1:
             print "One or more of the Arguments are no .root file. Exiting!"
             exit()
 
-elif mode == 2:
+elif config.MODE == 2:
     for arg in sys.argv[2:]:
         if arg[-5:] == '.root':
             inputlist.append('root://xrootd.ba.infn.it//' + arg)
@@ -246,13 +123,13 @@ for idx, val in enumerate(ptcuts):
     enumber = 0
     print "handle_label",handle, label
     print "Total Events: " + str(events.size())
-    if not USE_STDOUT_DBG:
+    if not config.USE_STDOUT_DBG:
     	sys.stdout.write("[                    ]\r[")
 	sys.stdout.flush()
     percentage20 = 0 
     for idx, val in enumerate(events):
 
-	if USE_STDOUT_DBG:
+	if config.USE_STDOUT_DBG:
 		print "Event #" + str(idx)
 	else:
 		percentageNow = 20. * idx / events.size()
@@ -306,32 +183,32 @@ for idx, val in enumerate(ptcuts):
 				oldParticle = particle
 				try:
 					cs = abs(particle.status())
-					if USE_STDOUT_DBG:
-						print ( getParticleName( particle.pdgId() ) ),
+					if config.USE_STDOUT_DBG:
+						print ( particles.getParticleName( particle.pdgId() ) ),
 						print cs,
 					
 					if 21 <= cs <= 29:
 						hardest = True
-						if USE_STDOUT_DBG:
+						if config.USE_STDOUT_DBG:
 							print ( "[H]" ),
 					if 41 <= cs <= 49:
 						iSS = True
-						if USE_STDOUT_DBG:
+						if config.USE_STDOUT_DBG:
 							print ( "[IS]" ),
 					if 51 <= cs <= 59:
 						fSS = True
-						if USE_STDOUT_DBG:
+						if config.USE_STDOUT_DBG:
 							print ( "[FS]" ),
-					if USE_STDOUT_DBG:
+					if config.USE_STDOUT_DBG:
 						print (" <- "),
 					particle = particle.mother()
 					particle.mother() # this shall throw
 				except ReferenceError:
-					if USE_STDOUT_DBG:
+					if config.USE_STDOUT_DBG:
 						print "."
 					
-					if USE_DIGRAPH_DBG and not thisEventHasBeenDiGraphed:
-						DiGraph(eventNum, oldParticle)
+					if config.USE_DIGRAPH_DBG and not thisEventHasBeenDiGraphed:
+						visual.GraphViz(eventNum, oldParticle)
 						thisEventHasBeenDiGraphed = True
 						
 					break
@@ -339,12 +216,12 @@ for idx, val in enumerate(ptcuts):
 			if not hardest and not fSS and iSS:
 				isrjetpt.fill(eventweight,Jet.pt())
 				nISRJets = nISRJets + 1
-				if USE_STDOUT_DBG:
+				if config.USE_STDOUT_DBG:
 					print ( "[ISR++]" ) 
 			if hardest and fSS:
 				fsrjetpt.fill(eventweight,Jet.pt())
 				nFSRJets = nFSRJets + 1
-				if USE_STDOUT_DBG: 
+				if config.USE_STDOUT_DBG: 
 					print ( "[FSR++]" )
 			if Jet.pt() >= firstJetpt and Jet.pt() >= secondJetpt:
 				secondJetpt = firstJetpt
