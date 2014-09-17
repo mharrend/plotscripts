@@ -26,7 +26,7 @@ PARTICLE = { 1 : "d",
 	}
 
 # Get human readable particle name by PdgId
-def getParticleName(pdgId):
+def GetParticleName(pdgId):
 	try:
 		if pdgId < 0:
 			return "-" + PARTICLE[-pdgId]

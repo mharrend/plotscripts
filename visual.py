@@ -1,4 +1,4 @@
-import particles
+from particles import *
 
 #
 # Visualization
@@ -15,7 +15,7 @@ def GraphViz(eventNum, MainConstituent):
 	
 def RecurseParticle(f, p, rec, last, index):
 	
-	particleName = particles.getParticleName( p.pdgId() )
+	particleName = GetParticleName( p.pdgId() )
 	cs = abs(p.status())
 	
 	typeString = str(cs)
