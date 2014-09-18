@@ -1,10 +1,21 @@
 from particles import *
 
+from subprocess import call
+
+import thread
+import threading
+
 #
 # Visualization
 # 
-def GraphViz(eventNum, MainConstituent):
-	f = open("event" + str(eventNum) + ".di" , 'w')
+
+ThreadList = []
+
+def GraphViz(fileName, MainConstituent):
+	diFileName = fileName + ".di"
+	pngFileName = fileName + ".png"
+	
+	f = open(diFileName , 'w')
 	f.write("digraph G {\n")
 	f.write("graph [nodesep=0.01]\n") 
 	
@@ -12,6 +23,25 @@ def GraphViz(eventNum, MainConstituent):
 	
 	f.write("}\n")
 	f.close()
+	
+	thread.start_new_thread( GraphVizCreate, (diFileName, pngFileName ))
+	
+	#thread = threading.Thread(None, GraphVizCreate (diFileName, pngFileName ))
+	
+	#thread.start()
+	
+	#global ThreadList
+	#ThreadList.append(thread)
+
+#def GraphViz_WaitForThreads():
+	#print "Waiting for visualization threads to end...",
+	#global ThreadList
+	#for thread in ThreadList:
+		#thread.join()
+	#print " done."
+
+def GraphVizCreate(diFileName, pngFileName):
+	call(["twopi", diFileName ,"-Tpng","-o",pngFileName ])	
 	
 def RecurseParticle(f, p, rec, last, index):
 	
