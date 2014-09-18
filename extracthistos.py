@@ -73,14 +73,12 @@ class ExtractHistos(object):
 			
 			#ROOT.gROOT.SetStyle('Plain') # white background
 			#Loop through all Events and Fill the Histogram
-			print 'Filling new jet histograms with ptcut: '+currentCutString+'GeV'
+			print 'Processing ' + str(events.size()) + ' events @ pTCut='+currentCutString+'GeV'
 			enumber = 0
-			print "handle_label",handle, label
-			print "Total Events: " + str(events.size())
 			if not runParams.useDebugOutput:
-				sys.stdout.write("[                    ]\r[")
+				sys.stdout.write("[                                                  ]\r[")
 				sys.stdout.flush()
-			percentage20 = 0 
+			percentage50 = 0 
 			for currentEventIndex, currentEvent in enumerate(events):
 			
 				totalEventCount = totalEventCount + 1
@@ -91,9 +89,9 @@ class ExtractHistos(object):
 				if runParams.useDebugOutput:
 					print "Event #" + str(currentEventIndex)
 				else:
-					percentageNow = 20. * currentEventIndex / events.size()
-					if percentageNow >= percentage20+1:
-						percentage20 = percentage20 + 1 
+					percentageNow = 50. * currentEventIndex / events.size()
+					if percentageNow >= percentage50+1:
+						percentage50 = percentage50 + 1 
 						sys.stdout.write('.')
 						sys.stdout.flush()	
 				currentEvent.getByLabel (label, handle)

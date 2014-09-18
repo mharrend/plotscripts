@@ -134,6 +134,10 @@ class ArgParser(object):
 		
 		raise Exception("'" + arg + "' is not a valid root file!")
 	
+	if self.runParams.useVisualization and len(self.runParams.inputFileList) > 1:
+		raise Exception("Visualization is allowed only for exactly one input file.")
+		
+	
 	if self.runParams.run:
 		if os.path.isfile(self.runParams.outputFile) and not forceOutputOverride:
 			raise Exception("'" + self.runParams.outputFile + "' exists. Use the --force switch to force overriding.")
