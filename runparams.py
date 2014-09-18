@@ -9,3 +9,4 @@ class RunParams(object):
 		self.etaCut = 2.5
 		self.pTCuts = [25., 30., 50., 100.]
 		self.run = True
+		self.zeroAdditionalJets = False

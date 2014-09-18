@@ -5,14 +5,14 @@ import os.path
 import string
 
 class ArgParser(object):
-    def displayInfo(self):
-	    print "[useVisualization]=" + str (self.runParams.useVisualization)
-	    print "[maxEvents]=" + str (self.runParams.maxEvents)
-	    print "[useDebugOutput]=" + str (self.runParams.useDebugOutput)
-	    print "[OutputFile]=" + self.runParams.outputFile
-	    print "[InputFiles]"
-	    for inputFile in self.runParams.inputFileList:
-		    print "  " + inputFile
+    #def displayInfo(self):
+	#    print "[useVisualization]=" + str (self.runParams.useVisualization)
+	 #   print "[maxEvents]=" + str (self.runParams.maxEvents)
+	  #  print "[useDebugOutput]=" + str (self.runParams.useDebugOutput)
+	   # print "[OutputFile]=" + self.runParams.outputFile
+	    #print "[InputFiles]"
+	    #for inputFile in self.runParams.inputFileList:
+		#    print "  " + inputFile
 	 
     def parsePtCutString(self, ptCutString):
 	return map(float, string.split(ptCutString,',') )
@@ -41,6 +41,7 @@ class ArgParser(object):
 	    print "--force     | -f:  Force overwriting of output file"
 	    print "--etacut    | -e:  Set etaCut (double)"
 	    print "--ptcuts    | -p:  Set pTcuts (list of doubles seperated by ',')"
+	    print "--zero-jets | -z:  Enable zero additional jets mode"
 	    print ""
 	    
     def __init__(self, args):
@@ -107,6 +108,11 @@ class ArgParser(object):
 		    self.runParams.run = False
 		    break
 		
+		if ( arg == "-z" ) or ( arg == "--zero-jets" )  :
+		    self.runParams.zeroAdditionalJets = True
+		    continue
+
+		
 		if (arg[0] == '-'):
 			raise Exception("'" + arg + "' is not a valid switch!")
 		
@@ -132,4 +138,4 @@ class ArgParser(object):
 		if os.path.isfile(self.runParams.outputFile) and not forceOutputOverride:
 			raise Exception("'" + self.runParams.outputFile + "' exists. Use the --force switch to force overriding.")
 					
-		self.displayInfo()
+		#self.displayInfo()
