@@ -11,7 +11,7 @@ import threading
 
 ThreadList = []
 
-def GraphViz(fileName, MainConstituent):
+def GraphViz(fileName, MainConstituent,  isr_jets, fsr_jets):
 	diFileName = fileName + ".di"
 	pngFileName = fileName + ".png"
 	
@@ -19,12 +19,14 @@ def GraphViz(fileName, MainConstituent):
 	f.write("digraph G {\n")
 	f.write("graph [nodesep=0.01]\n") 
 	
-	RecurseParticle(f, MainConstituent, 0, "", 0)
+	RecurseParticle(f, MainConstituent, 0, "", 0,  isr_jets, fsr_jets)
 	
 	f.write("}\n")
 	f.close()
 	
-	thread.start_new_thread( GraphVizCreate, (diFileName, pngFileName ))
+	#thread.start_new_thread( GraphVizCreate, (diFileName, pngFileName ))
+	
+	GraphVizCreate (diFileName, pngFileName )
 	
 	#thread = threading.Thread(None, GraphVizCreate (diFileName, pngFileName ))
 	
@@ -43,13 +45,16 @@ def GraphViz(fileName, MainConstituent):
 def GraphVizCreate(diFileName, pngFileName):
 	call(["twopi", diFileName ,"-Tpng","-o",pngFileName ])	
 	
-def RecurseParticle(f, p, rec, last, index):
+def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets):
 	
 	particleName = GetParticleName( p.pdgId() )
 	cs = abs(p.status())
 	
 	typeString = str(cs)
 	colorString = "black"
+	
+	textColorString = "black"
+	
 	fillColorString = "white"
 	styleString = ""
 	
@@ -92,12 +97,51 @@ def RecurseParticle(f, p, rec, last, index):
 	
 	particleQualifier = last + "H" + str(rec) + "I" + str(index)
 	particleLabel = particleName
+	particleLabelFinal = particleLabel + "[" + typeString + "]"
+
+	for numJet, jet in enumerate(isr_jets):
+		nDaughters = jet.numberOfDaughters()
+		for i in range(0,nDaughters):
+			currentCandidate = jet.daughter(i)
+			#pp = str(p)[-9:]
+			#cc = str(currentCandidate)[-9:]		
 	
-	attrib = styleString + ", color=" + colorString + ", fillcolor=" + fillColorString
+			if currentCandidate == p:
+				
+				particleLabelFinal = str(numJet)
+				
+				#print "IS HAS HAPPENED"
+				colorString = "red"
+				textColorString = "black"
+				fillColorString="orange"
+				styleString = ", style=filled"
+				
+	for numJet, jet in enumerate(fsr_jets):
+		nDaughters = jet.numberOfDaughters()
+		for i in range(0,nDaughters):
+			currentCandidate = jet.daughter(i)
+			#pp = str(p)[-9:]
+			#cc = str(currentCandidate)[-9:]		
+			
+			
+			
+			if currentCandidate == p:
+				
+				particleLabelFinal = str(numJet)
+				
+				#print "IS HAS HAPPENED"
+				colorString = "blue"
+				textColorString = "black"
+				fillColorString="deeppink"
+				styleString = ", style=filled"
 	
-	f.write(particleQualifier + "[label=\"" + particleLabel + "[" + typeString + "]" + "\"" + attrib + "];\n")
+
+	
+	attrib = styleString + ", color=" + colorString + ", fillcolor=" + fillColorString + ", fontcolor=" + textColorString
+	
+	f.write(particleQualifier + "[label=\"" + particleLabelFinal + "\"" + attrib + "];\n")
 	if last <> "":
 		f.write(last + " -> " + particleQualifier + ";\n")
 	n = p.numberOfDaughters();
 	for i in range(0,n):
-		RecurseParticle(f, p.daughter(i), rec + 1, particleQualifier, i)
+		RecurseParticle(f, p.daughter(i), rec + 1, particleQualifier, i,  isr_jets, fsr_jets)

@@ -106,7 +106,11 @@ class ExtractHistos(object):
 				nFSRJets = 0
 				eventweight = Infos.weight()
 				
-				thisEventHasBeenDiGraphed = False
+#				thisEventHasBeenDiGraphed = False
+					
+				isrJets = []
+				fsrJets = []
+				vizReferenceParticle = None
 					
 				for currentJetIndex, currentJet in enumerate(GenJets):
 					if currentJet.pt() >= currentCut and abs(currentJet.eta()) <= runParams.etaCut:
@@ -117,13 +121,15 @@ class ExtractHistos(object):
 						energy.fill(eventweight,currentJet.energy())
 						
 						# ISR/FSR implementation		
-						jetMother = currentJet.getJetConstituents()
+						jetConsitituents = currentJet.getJetConstituents()
 						
 						hardest = False
 						iSS = False
-						fSS = False				
-						particle = jetMother[0]
-								
+						fSS = False			
+						particle = jetConsitituents[0]
+						vizReferenceParticle = particle
+						
+							
 						while(True):
 							oldParticle = particle
 							try:
@@ -146,25 +152,28 @@ class ExtractHistos(object):
 										print ( "[FS]" ),
 								if runParams.useDebugOutput:
 									print (" <- "),
+									
+									
 								particle = particle.mother()
 								particle.mother() # this shall throw
+								
+								if not (particle is None):
+									vizReferenceParticle = particle
+
 							except ReferenceError:
 								if runParams.useDebugOutput:
 									print "."
-								
-								if runParams.useVisualization and not thisEventHasBeenDiGraphed:
-									fileName = "cut" + currentCutString + "_event" + str(currentEventIndex);
-									visual.GraphViz(fileName, oldParticle)
-									thisEventHasBeenDiGraphed = True
-									
+																
 								break
 							#break
-						if not hardest and not fSS and iSS:
+						if not hardest:
+							isrJets.append(currentJet)
 							isrjetpt.fill(eventweight,currentJet.pt())
 							nISRJets = nISRJets + 1
 							if runParams.useDebugOutput:
 								print ( "[ISR++]" ) 
-						if hardest and fSS:
+						if hardest:
+							fsrJets.append(currentJet)
 							fsrjetpt.fill(eventweight,currentJet.pt())
 							nFSRJets = nFSRJets + 1
 							if runParams.useDebugOutput: 
@@ -179,6 +188,16 @@ class ExtractHistos(object):
 						firstjetpt.fill(eventweight,firstJetpt)
 						secondjetpt.fill(eventweight,secondJetpt)
 						firstjeteta.fill(eventweight,firstJeteta)
+						
+				if runParams.useVisualization:
+					fileName = "cut" + currentCutString + "_event" + str(currentEventIndex);
+					#print "Her goes:"
+					#print str(vizReferenceParticle)
+					#print str(anotherParticle)
+					#var = raw_input("This is Visual Function Pre Call")
+
+					visual.GraphViz(fileName, vizReferenceParticle, isrJets, fsrJets)
+						
 				njets.fill(eventweight,nJets)
 				nIsrJets.fill(eventweight,min(15,nISRJets))
 				nFsrJets.fill(eventweight,min(15,nFSRJets))
