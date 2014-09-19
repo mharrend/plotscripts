@@ -71,7 +71,7 @@ class ArgParser(object):
 			
 		# parse switches
 	    	if ( arg == "-d" ) or ( arg == "--debug" )  :
-		    self.runParams.useDebug = True
+		    self.runParams.useDebugOutput = True
 		    continue
 		if ( arg == "-e" ) or ( arg == "--etacut" )  :
 		    if nextArg is None or nextArg[0] == '-':
@@ -121,7 +121,6 @@ class ArgParser(object):
 		    self.runParams.events = self.parseEventsString(eventsString)
 		    skip = True
 		    continue
-
 		
 		if (arg[0] == '-'):
 			raise Exception("'" + arg + "' is not a valid switch!")
@@ -152,4 +151,4 @@ class ArgParser(object):
 		if os.path.isfile(self.runParams.outputFile) and not forceOutputOverride:
 			raise Exception("'" + self.runParams.outputFile + "' exists. Use the --force switch to force overriding.")
 					
-		#self.displayInfo()
+	#self.displayInfo()
