@@ -45,7 +45,7 @@ class ArgParser(object):
 	    print "--ptcuts    | -p:  Set pTcuts (list of doubles seperated by ',')"
 	    print "--visualize | -v:  Create visualizations saved as ptCut#_event#.png"
 	    print "--zero-jets | -z:  Enable zero additional jets mode"
-	    print "--events    | -#:  Specify certain events (lis of ints seperated by ',')"
+	    print "--events    | -#:  Specify certain events (list of ints seperated by ',')"
 	    print ""
 	    
     def __init__(self, args):
