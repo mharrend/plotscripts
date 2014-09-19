@@ -48,6 +48,27 @@ def GraphViz(fileName, MainConstituent,  isr_jets, fsr_jets):
 def GraphVizCreate(diFileName, pngFileName):
 	call(["twopi", diFileName ,"-Tpng","-o",pngFileName ])	
 	
+def CreateColorChannelFromIndex(index,parity=1):
+	color = index * (256-25)
+	color = color % 256
+	if parity == -1:
+		color = 255 - color
+	colorString = hex(color)
+	result = colorString[2:]
+	if len(result) == 1:
+		result = "0" + result
+
+	#print str(index) + " (" + str(parity) + ")" + ": " + result
+	return result
+	
+def CreateColorFromParams(jetType,numJet):
+	if jetType == "FSR":
+		return "00" + CreateColorChannelFromIndex(numJet) + CreateColorChannelFromIndex(numJet,-1)
+	elif jetType == "ISR":
+		return "FF" + CreateColorChannelFromIndex(numJet) + "00"
+	else:
+		raise Exception("unknown jet type: '" + jetType + "'")
+	
 def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets):
 	
 	particleName = GetParticleName( p.pdgId() )
@@ -98,7 +119,7 @@ def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets):
 				#particleLabelFinal = str(numJet)
 				colorString = "red"
 				textColorString = "black"
-				fillColorString="orange"
+				fillColorString='"#'+CreateColorFromParams("ISR",numJet)+'"'
 				styleString = ", style=filled"
 				
 	for numJet, jet in enumerate(fsr_jets):
@@ -109,7 +130,7 @@ def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets):
 				#particleLabelFinal = str(numJet)
 				colorString = "blue"
 				textColorString = "black"
-				fillColorString="deeppink"
+				fillColorString='"#'+CreateColorFromParams("FSR",numJet)+'"'
 				styleString = ", style=filled"
 	
 	attrib = styleString + ", color=" + colorString + ", fillcolor=" + fillColorString + ", fontcolor=" + textColorString
