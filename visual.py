@@ -12,6 +12,9 @@ import threading
 ThreadList = []
 
 def GraphViz(fileName, MainConstituent,  isr_jets, fsr_jets):
+	if MainConstituent is None:
+		print "Warning in " + fileName + ": MainConstituent is None."
+		return 
 	diFileName = fileName + ".di"
 	pngFileName = fileName + ".png"
 	
@@ -61,10 +64,8 @@ def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets):
 	if cs == 4:
 		styleString = ", style=filled"
 		fillColorString="deeppink"
-	if 21 <= cs <= 29:
+	elif 21 <= cs <= 29:
 		hardest = True
-		#typeString = "H"
-		#colorString = "yellow"
 		fillColorString="yellow"
 		styleString = ", style=filled"
 	elif 31 <= cs <= 39:
@@ -72,28 +73,18 @@ def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets):
 		styleString = ", style=filled"
 	elif 41 <= cs <= 49:
 		iSS = True
-		#typeString = "ISS"
-		#colorString = "red"
 		fillColorString="red"
 		styleString = ", style=filled"
 	elif 51 <= cs <= 59:
 		fSS = True
-		#typeString = "FSS"
-		#colorString = "blue"
 		fillColorString="lightblue"
 		styleString = ", style=filled"
 	elif 61 <= cs <= 69:
-		#typeString = "FSS"
-		#colorString = "blue"
 		fillColorString="brown"
 		styleString = ", style=filled"
 	elif 71 <= cs <= 79:
-		#typeString = "FSS"
-		#colorString = "blue"
 		fillColorString="gray"
 		styleString = ", style=filled"
-	#else:
-		#typeString = str(cs)
 	
 	particleQualifier = last + "H" + str(rec) + "I" + str(index)
 	particleLabel = particleName
@@ -103,14 +94,8 @@ def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets):
 		nDaughters = jet.numberOfDaughters()
 		for i in range(0,nDaughters):
 			currentCandidate = jet.daughter(i)
-			#pp = str(p)[-9:]
-			#cc = str(currentCandidate)[-9:]		
-	
 			if currentCandidate == p:
-				
-				particleLabelFinal = str(numJet)
-				
-				#print "IS HAS HAPPENED"
+				#particleLabelFinal = str(numJet)
 				colorString = "red"
 				textColorString = "black"
 				fillColorString="orange"
@@ -120,22 +105,12 @@ def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets):
 		nDaughters = jet.numberOfDaughters()
 		for i in range(0,nDaughters):
 			currentCandidate = jet.daughter(i)
-			#pp = str(p)[-9:]
-			#cc = str(currentCandidate)[-9:]		
-			
-			
-			
 			if currentCandidate == p:
-				
-				particleLabelFinal = str(numJet)
-				
-				#print "IS HAS HAPPENED"
+				#particleLabelFinal = str(numJet)
 				colorString = "blue"
 				textColorString = "black"
 				fillColorString="deeppink"
 				styleString = ", style=filled"
-	
-
 	
 	attrib = styleString + ", color=" + colorString + ", fillcolor=" + fillColorString + ", fontcolor=" + textColorString
 	

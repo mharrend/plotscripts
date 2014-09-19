@@ -81,6 +81,10 @@ class ExtractHistos(object):
 			percentage50 = 0 
 			for currentEventIndex, currentEvent in enumerate(events):
 			
+				if len(runParams.events) > 0:
+					if currentEventIndex not in runParams.events:
+						continue
+			
 				totalEventCount = totalEventCount + 1
 				if runParams.maxEvents > -1 and totalEventCount > runParams.maxEvents:
 					Break = True

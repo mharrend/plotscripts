@@ -16,6 +16,9 @@ class ArgParser(object):
 	 
     def parsePtCutString(self, ptCutString):
 	return map(float, string.split(ptCutString,',') )
+    
+    def parseEventsString(self, eventsString):
+	return map(int, string.split(eventsString,',') )
 	 
 	 
     def displayUserInfo(self):
@@ -33,15 +36,16 @@ class ArgParser(object):
 	    print "extracthistos inputFile.root /intputDir/*.root -v -o outputfile-extracted.root -p 20,30,50,100 -e 2.5 -l 100"
 	    print ""
 	    print "[switches]"
-	    print "--visualize | -v:  Create visualizations saved as ptCut#_event#.png"
+	    print "--debug     | -d:  Show debug information"
+	    print "--etacut    | -e:  Set etaCut (double)"
+	    print "--force     | -f:  Force overwriting of output file"
+	    print "--info      | -i:  Shows this info"
 	    print "--limit     | -l:  Limit maximum # of events processed"
 	    print "--output    | -o:  Set output file (string)"
-	    print "--info      | -i:  Shows this info"
-	    print "--debug     | -d:  Show debug information"
-	    print "--force     | -f:  Force overwriting of output file"
-	    print "--etacut    | -e:  Set etaCut (double)"
 	    print "--ptcuts    | -p:  Set pTcuts (list of doubles seperated by ',')"
+	    print "--visualize | -v:  Create visualizations saved as ptCut#_event#.png"
 	    print "--zero-jets | -z:  Enable zero additional jets mode"
+	    print "--events    | -#:  Specify certain events (lis of ints seperated by ',')"
 	    print ""
 	    
     def __init__(self, args):
@@ -66,8 +70,28 @@ class ArgParser(object):
 			nextArg = args[i+1]
 			
 		# parse switches
-	    	if ( arg == "-v" ) or ( arg == "--visualize" )  :
-		    self.runParams.useVisualization = True
+	    	if ( arg == "-d" ) or ( arg == "--debug" )  :
+		    self.runParams.useDebug = True
+		    continue
+		if ( arg == "-e" ) or ( arg == "--etacut" )  :
+		    if nextArg is None or nextArg[0] == '-':
+			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
+		    self.runParams.eta = int(nextArg)
+		    skip = True
+		    continue
+		if ( arg == "-f" ) or ( arg == "--force" )  :
+		    forceOutputOverride = True
+		    continue
+		if ( arg == "-i" ) or ( arg == "--info" )  :
+		    self.displayUserInfo()
+		    self.runParams.run = False
+		    break
+
+		if ( arg == "-l" ) or ( arg == "--limit" )  :
+		    if nextArg is None or nextArg[0] == '-':
+			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
+		    self.runParams.maxEvents = int(nextArg)
+		    skip = True
 		    continue
 	    	if ( arg == "-o" ) or ( arg == "--output" )  :
 		    if nextArg is None or nextArg[0] == '-':
@@ -77,25 +101,6 @@ class ArgParser(object):
 		    self.runParams.outputFile = nextArg
 		    skip = True
 		    continue
-		if ( arg == "-l" ) or ( arg == "--limit" )  :
-		    if nextArg is None or nextArg[0] == '-':
-			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
-		    self.runParams.maxEvents = int(nextArg)
-		    skip = True
-		    continue
-		if ( arg == "-d" ) or ( arg == "--debug" )  :
-		    self.runParams.useDebug = True
-		    continue
-		if ( arg == "-f" ) or ( arg == "--force" )  :
-		    forceOutputOverride = True
-		    continue
-		if ( arg == "-e" ) or ( arg == "--etacut" )  :
-		    if nextArg is None or nextArg[0] == '-':
-			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
-		    self.runParams.eta = int(nextArg)
-		    skip = True
-		    continue
-		
 		if ( arg == "-p" ) or ( arg == "--ptcuts" )  :
 		    if nextArg is None or nextArg[0] == '-':
 			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
@@ -103,13 +108,18 @@ class ArgParser(object):
 		    self.runParams.pTCuts = self.parsePtCutString(ptCutString)
 		    skip = True
 		    continue
-		if ( arg == "-i" ) or ( arg == "--info" )  :
-		    self.displayUserInfo()
-		    self.runParams.run = False
-		    break
-		
+		if ( arg == "-v" ) or ( arg == "--visualize" )  :
+		    self.runParams.useVisualization = True
+		    continue
 		if ( arg == "-z" ) or ( arg == "--zero-jets" )  :
 		    self.runParams.zeroAdditionalJets = True
+		    continue
+		if ( arg == "-#" ) or ( arg == "--events" )  :
+		    if nextArg is None or nextArg[0] == '-':
+			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
+		    eventsString = nextArg
+		    self.runParams.events = self.parseEventsString(eventsString)
+		    skip = True
 		    continue
 
 		
