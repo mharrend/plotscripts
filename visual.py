@@ -140,29 +140,29 @@ def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets, Ws, Bs, Hs, isWD
 			if p == h:
 				isHDaughter = True
 
-		#if not (isWDaughter or isHDaughter):
+		if not (isWDaughter or isHDaughter):
 
-			#for numJet, jet in enumerate(isr_jets):
-			#	nDaughters = jet.numberOfDaughters()
-			#	for i in range(0,nDaughters):
-			#		currentCandidate = jet.daughter(i)
-			#		if currentCandidate == p:
-			#			#particleLabelFinal = str(numJet)
-			#			colorString = "red"
-			#			textColorString = "black"
-			#			fillColorString='"#'+CreateColorFromParams("ISR",numJet)+'"'
-			#			styleString = ", style=filled"
+			for numJet, jet in enumerate(isr_jets):
+				nDaughters = jet.numberOfDaughters()
+				for i in range(0,nDaughters):
+					currentCandidate = jet.daughter(i)
+					if currentCandidate == p:
+						#particleLabelFinal = str(numJet)
+						colorString = "red"
+						textColorString = "black"
+						fillColorString='"#'+CreateColorFromParams("ISR",numJet)+'"'
+						styleString = ", style=filled"
 						
-			#for numJet, jet in enumerate(fsr_jets):
-				#nDaughters = jet.numberOfDaughters()
-				#for i in range(0,nDaughters):
-					#currentCandidate = jet.daughter(i)
-					#if currentCandidate == p:
-						##particleLabelFinal = str(numJet)
-						#colorString = "blue"
-						#textColorString = "black"
-						#fillColorString='"#'+CreateColorFromParams("FSR",numJet)+'"'
-						#styleString = ", style=filled"
+			for numJet, jet in enumerate(fsr_jets):
+				nDaughters = jet.numberOfDaughters()
+				for i in range(0,nDaughters):
+					currentCandidate = jet.daughter(i)
+					if currentCandidate == p:
+						#particleLabelFinal = str(numJet)
+						colorString = "blue"
+						textColorString = "black"
+						fillColorString='"#'+CreateColorFromParams("FSR",numJet)+'"'
+						styleString = ", style=filled"
 				
 
 		

@@ -255,17 +255,20 @@ class ExtractHistos(object):
 						
 				Ws, Bs, Hs = self.findSpecialHardParticles(referenceParticle, Ws, Bs, Hs)
 				
-				
 				for w in Ws:
 					if runParams.useDebugOutput:
-						allFinalDaughters = self.getAllDaughters(w, [], -1, True)
-						sum = w.p4() - w.p4()
+						allChildren = self.getAllDaughters(w, [], -1, True)
+						sum = ROOT.Math.LorentzVector('ROOT::Math::PxPyPzE4D<double>')()
+						#sum = ROOT.Math.LorentzVector('ROOT::Math::PtEtaPhiE4D<double>')()
+						
 						#print "First.M()=" + str(sum.M())
-						for f in allFinalDaughters:
-							if f.status() <> 1:
-								print GetParticleName(f.pdgId()) + " [" + str(f.status()) + "] M=" + str(f.p4().M())
+						for f in allChildren:
+							#if f.status() <> 1:
+							#	print GetParticleName(f.pdgId()) + " [" + str(f.status()) + "] p=" + str(f.p4().p())
 							sum = sum + f.p4()
-						print "w M=" + str(w.p4().M()) + ", sum final Daughters M=" + str(sum.M())
+						print "w pt=" + str(w.p4().pt()) + ", sum allChildren pt=" + str(sum.pt())
+						print "w M=" + str(w.p4().M()) + ", sum allChildren M=" + str(sum.M())
+						print "w e=" + str(w.p4().energy()) + ", sum allChildren e=" + str(sum.energy())
 					W_Pt.fill(eventweight,w.pt())
 					W_E.fill(eventweight,w.energy())
 					#W_E.fill(eventweight,w.deltaR())
