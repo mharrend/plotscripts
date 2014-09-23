@@ -44,7 +44,7 @@ class ExtractHistos(object):
 				self.getAllDaughters(cParticle,currentList,nRecursions-1)
 		return currentList
 		
-	def findSpecialHardParticles(self, referenceParticle, Ws = [], Hs = [], hasSeenT=False, hasSeenW=False, hasSeenH=False):
+	def findSpecialHardParticles(self, referenceParticle, Ws = [], Bs = [], Hs = [], hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
 		numberOfDaughters = referenceParticle.numberOfDaughters()
 		for i in range (0,numberOfDaughters):
 			cParticle = referenceParticle.daughter(i)
@@ -52,23 +52,29 @@ class ExtractHistos(object):
 			
 			thisIsTop = False
 			thisIsW = False
+			thisIsB = False
 			thisIsH = False
 			
 			if 21 <= cStatus <= 29:
-				pdgId = abs(cParticle.pdgId())
-				if pdgId == 6:
+				absPdgId = abs(cParticle.pdgId())
+				if absPdgId == 6:
 					thisIsTop = True
-				if pdgId == 24:
+				if absPdgId == 24:
 					thisIsW = True
 					if hasSeenT and not hasSeenW:
 						Ws.append(cParticle)
 						continue
-				if pdgId == 25:
+				if absPdgId == 5:
+					thisIsB = True
+					if hasSeenT and not hasSeenB:
+						Bs.append(cParticle)
+						continue
+				if absPdgId == 25:
 					thisIsH = True
 					Hs.append(cParticle)
 					continue
-			self.findSpecialHardParticles(cParticle,Ws,Hs,hasSeenT or thisIsTop, hasSeenW or thisIsW , hasSeenH or thisIsH )
-		return Ws, Hs 
+			self.findSpecialHardParticles(cParticle,Ws,Bs,Hs,hasSeenT or thisIsTop, hasSeenW or thisIsW , hasSeenB or thisIsB ,hasSeenH or thisIsH )
+		return Ws, Bs, Hs 
 		
 	def run(self, runParams):
 		global IsInitialized
@@ -228,13 +234,17 @@ class ExtractHistos(object):
 						secondjetpt.fill(eventweight,secondJetpt)
 						firstjeteta.fill(eventweight,firstJeteta)
 						
-				Ws, Hs = self.findSpecialHardParticles(referenceParticle)
+				Ws = []
+				Bs = []
+				Hs = []
+						
+				Ws, Bs, Hs = self.findSpecialHardParticles(referenceParticle, Ws, Bs, Hs)
 				
-				#print "Found: " + str(len(Ws)) + " Ws and " + str(len(Hs)) + " Hs." 
+				#print "Found: " + str(len(Ws)) + " Ws and " + str(len(Bs)) + " Bs and " + str(len(Hs)) + " Hs." 
 						
 				if runParams.useVisualization:
 					fileName = "cut" + currentCutString + "_event" + str(currentEventIndex);
-					visual.GraphViz(fileName, referenceParticle, isrJets, fsrJets, Ws, Hs)
+					visual.GraphViz(fileName, referenceParticle, isrJets, fsrJets, Ws, Bs, Hs)
 						
 				njets.fill(eventweight,nJets)
 				nIsrJets.fill(eventweight,min(15,nISRJets))

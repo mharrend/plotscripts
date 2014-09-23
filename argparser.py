@@ -44,7 +44,7 @@ class ArgParser(object):
 	    print "--output    | -o:  Set output file (string)"
 	    print "--ptcuts    | -p:  Set pTcuts (list of doubles seperated by ',')"
 	    print "--visualize | -v:  Create visualizations saved as ptCut#_event#.png"
-	    print "--zero-jets | -z:  Enable zero additional jets mode"
+	    #print "--zero-jets | -z:  Enable zero additional jets mode"
 	    print "--events    | -#:  Specify certain events (list of ints seperated by ',')"
 	    print ""
 	    
@@ -111,9 +111,9 @@ class ArgParser(object):
 		if ( arg == "-v" ) or ( arg == "--visualize" )  :
 		    self.runParams.useVisualization = True
 		    continue
-		if ( arg == "-z" ) or ( arg == "--zero-jets" )  :
-		    self.runParams.zeroAdditionalJets = True
-		    continue
+		#if ( arg == "-z" ) or ( arg == "--zero-jets" )  :
+		    #self.runParams.zeroAdditionalJets = True
+		    #continue
 		if ( arg == "-#" ) or ( arg == "--events" )  :
 		    if nextArg is None or nextArg[0] == '-':
 			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
