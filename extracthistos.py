@@ -45,35 +45,36 @@ class ExtractHistos(object):
 		return currentList
 		
 	def findSpecialHardParticles(self, referenceParticle, Ws = [], Bs = [], Hs = [], hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
-		numberOfDaughters = referenceParticle.numberOfDaughters()
-		for i in range (0,numberOfDaughters):
-			cParticle = referenceParticle.daughter(i)
-			cStatus = cParticle.status()
-			
-			thisIsTop = False
-			thisIsW = False
-			thisIsB = False
-			thisIsH = False
-			
-			if 21 <= cStatus <= 29:
-				absPdgId = abs(cParticle.pdgId())
-				if absPdgId == 6:
-					thisIsTop = True
-				if absPdgId == 24:
-					thisIsW = True
-					if hasSeenT and not hasSeenW:
-						Ws.append(cParticle)
+		if referenceParticle is not None:
+			numberOfDaughters = referenceParticle.numberOfDaughters()
+			for i in range (0,numberOfDaughters):
+				cParticle = referenceParticle.daughter(i)
+				cStatus = cParticle.status()
+				
+				thisIsTop = False
+				thisIsW = False
+				thisIsB = False
+				thisIsH = False
+				
+				if 21 <= cStatus <= 29:
+					absPdgId = abs(cParticle.pdgId())
+					if absPdgId == 6:
+						thisIsTop = True
+					if absPdgId == 24:
+						thisIsW = True
+						if hasSeenT and not hasSeenW:
+							Ws.append(cParticle)
+							continue
+					if absPdgId == 5:
+						thisIsB = True
+						if hasSeenT and not hasSeenB:
+							Bs.append(cParticle)
+							continue
+					if absPdgId == 25:
+						thisIsH = True
+						Hs.append(cParticle)
 						continue
-				if absPdgId == 5:
-					thisIsB = True
-					if hasSeenT and not hasSeenB:
-						Bs.append(cParticle)
-						continue
-				if absPdgId == 25:
-					thisIsH = True
-					Hs.append(cParticle)
-					continue
-			self.findSpecialHardParticles(cParticle,Ws,Bs,Hs,hasSeenT or thisIsTop, hasSeenW or thisIsW , hasSeenB or thisIsB ,hasSeenH or thisIsH )
+				self.findSpecialHardParticles(cParticle,Ws,Bs,Hs,hasSeenT or thisIsTop, hasSeenW or thisIsW , hasSeenB or thisIsB ,hasSeenH or thisIsH )
 		return Ws, Bs, Hs 
 		
 	def run(self, runParams):
@@ -96,6 +97,14 @@ class ExtractHistos(object):
 			#Jet Histogram
 			njets = Histogram (outputFileObject, "HnJets"+currentCutString, "Number of Jets "+currentCutString, 15, -0.5, 14.5)
 			pt = Histogram(outputFileObject, "Hpt"+currentCutString,"Gen-Jet pt "+currentCutString,100,0,300)
+			
+			W_Pt = Histogram(outputFileObject, "HWpt"+currentCutString,"W-Boson pT "+currentCutString,100,0,300)
+			B_Pt = Histogram(outputFileObject, "HBpt"+currentCutString,"B-Quark pT "+currentCutString,100,0,300)
+			H_Pt = Histogram(outputFileObject, "HHpt"+currentCutString,"Higgs pT "+currentCutString,100,0,300)
+			W_E = Histogram(outputFileObject, "HWE"+currentCutString,"W-Boson E "+currentCutString,100,0,300)
+			B_E = Histogram(outputFileObject, "HBE"+currentCutString,"B-Quark E "+currentCutString,100,0,300)
+			H_E = Histogram(outputFileObject, "HHE"+currentCutString,"Higgs E "+currentCutString,100,0,300)
+			
 			phi = Histogram(outputFileObject, "Hphi"+currentCutString,"Gen-Jet Phi "+currentCutString,50,-pi,pi)
 			theta = Histogram(outputFileObject, "Htheta"+currentCutString,"Gen-Jet Theta "+currentCutString,50,0,pi)
 			energy = Histogram(outputFileObject, "Henergy"+currentCutString,"Gen-Jet Energy "+currentCutString,100,0,600)
@@ -240,6 +249,17 @@ class ExtractHistos(object):
 						
 				Ws, Bs, Hs = self.findSpecialHardParticles(referenceParticle, Ws, Bs, Hs)
 				
+				
+				for w in Ws:
+					W_Pt.fill(eventweight,w.pt())
+					W_E.fill(eventweight,w.energy())
+				for b in Bs:
+					B_Pt.fill(eventweight,w.pt())
+					B_E.fill(eventweight,w.energy())
+				for h in Hs:
+					H_Pt.fill(eventweight,w.pt())
+					H_E.fill(eventweight,w.energy())
+				
 				#print "Found: " + str(len(Ws)) + " Ws and " + str(len(Bs)) + " Bs and " + str(len(Hs)) + " Hs." 
 						
 				if runParams.useVisualization:
@@ -263,6 +283,12 @@ class ExtractHistos(object):
 			fsrjetpt.write()
 			nIsrJets.write()
 			nFsrJets.write()
+			W_Pt.write()
+			W_E.write()
+			B_Pt.write()
+			B_E.write()
+			H_Pt.write()
+			H_E.write()
 			#delete all variables, that are used again in the next loop
 			del handle
 			del label
