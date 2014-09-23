@@ -1,156 +1,245 @@
 #Script to extract histograms from the Root Tree, that is produced by Pythia8 in CMSSW
-#Usage: python extracthistos.py input1.root (input2.root) output.root
-#the secound inputfile is only needed, if you want to fill the showerd events from two events on partonlevel into the same output histogram
+#Usage: TODO
+
 from DataFormats.FWLite import Events, Handle
-import ROOT
 from math import pi
-from ROOT import TH1F, TFile, TTree, TString, gSystem
 import sys 
+from glob import glob
+import os
 
-#----------- Class for Histograms ----------------#
-# initialize histograms the same way like when using TH1F only with Histograms
-# the constuctor initializes 3 TH1F objects.
-class Histograms(object):
-    def __init__(self, inhalt, title, nbins, minbin, maxbin):
-        self.pos = TH1F(inhalt+"pos",title+" with pos. weights",nbins,minbin,maxbin)
-        self.neg = TH1F(inhalt+"neg",title+" with neg. weights",nbins,minbin,maxbin)
-        self.combined = TH1F(inhalt,title,nbins,minbin,maxbin)
-    def fill(self,weight,value):
-        if weight >0:
-            self.pos.Fill(value,weight)
-        elif weight < 0:
-            self.neg.Fill(value,weight*(-1.))
-        self.combined.Fill(value,weight)
-    def write(self):
-        outputfile.WriteTObject(self.pos)
-        outputfile.WriteTObject(self.neg)
-        outputfile.WriteTObject(self.combined)
-#-------------------------------------------------#
-#---------------- Cut definitions ----------------#
-ptcut = 25 
-etacut = 2.5
-#-------------------------------------------------#
-#First use FW Lite from CMSSW
-#-------------------- FW Lite --------------------#
-cmsswbase = TString.getenv("CMSSW_BASE")
+import ROOT
+from ROOT import TH1F, TFile, TTree, TString, gSystem
 
-print 'Loading FW Lite setup.\n'
-gSystem.Load("libFWCoreFWLite.so") 
-ROOT.AutoLibraryLoader.enable()
-gSystem.Load("libDataFormatsFWLite.so")
-gSystem.Load("libDataFormatsPatCandidates.so")
-#-------------------------------------------------#
-#Check number of system arguments
-if len(sys.argv) == 3:
-	events = Events (sys.argv[2])
-	outputfile = TFile(sys.argv[1],"RECREATE")
-elif len(sys.argv) == 4:
-	events = Events ([sys.argv[2],sys.argv[3]])
-	outputfile = TFile(sys.argv[1],"RECREATE")
-elif len(sys.argv) == 12:
-	events = Events ([sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5],sys.argv[6],sys.argv[7],sys.argv[8],sys.argv[9],sys.argv[10],sys.argv[11]])
-	outputfile = TFile(sys.argv[1],"RECREATE")
-elif len(sys.argv) == 22:
-	events = Events ([sys.argv[2],sys.argv[3],sys.argv[4],sys.argv[5],sys.argv[6],sys.argv[7],sys.argv[8],sys.argv[9],sys.argv[10],sys.argv[11],sys.argv[12],sys.argv[13],sys.argv[14],sys.argv[15],sys.argv[16],sys.argv[17],sys.argv[18],sys.argv[19],sys.argv[20],sys.argv[21]])
-	outputfile = TFile(sys.argv[1],"RECREATE")
-else:
-	print "Something is wrong with the number of arguments!"
-	print "Use: python extracthistos.py output.root input.root, if you just want to extract the Histograms from a single root file"
-	print "Or use: python extracthistos.py output.root input1.root input2.root, if you want also to add the input Histograms"
-	print "currently inplemented: 10 inputs and 20 inputs"
-	exit()
-
-#Definition of the Histograms
-#Jet Histograms
-njets= Histograms ("HnJets", "Number of Jets", 15, -0.5, 14.5)
-pt = Histograms("Hpt","Gen-Jet pt",100,0,300)
-phi = Histograms("Hphi","Gen-Jet Phi",50,-pi,pi)
-theta = Histograms("Htheta","Gen-Jet Theta",50,0,pi)
-energy = Histograms("Henergy","Gen-Jet Energy",100,0,600)
-firstjetpt = Histograms("HfirstJetpt","Pt of hardest Gen-Jet", 100,0,300)
-firstjeteta = Histograms("H1sJeteta","Eta of hardest Gen-Jet",50,-5,5)
-secoundjetpt = Histograms("HsecoundJetpt","Pt of 2nd hardest Gen-Jet", 100,0,300)
-"""
-#Particle Histograms
-Htpt = TH1F ("Htpt","pt of Top-Quarks", 100,0,300)
-Htbarpt = TH1F ("Htbarpt","pt of Top-Anti-Quark", 100, 0, 300)
-Httbarpt = TH1F ("Httbarpt", "pt of t tbar pair", 100, 0 ,300)
-"""
-# create handle outside of loop
-# Handle and lable are pointing at the Branch you want
-handle  = Handle ('std::vector<reco::GenJet>')
-label = ("ak5GenJets")
-particlehandle = Handle ('std::vector<reco::GenParticle>')
-particlelabel = ("genParticles")
-infohandle = Handle ('<GenEventInfoProduct>')
+# sibling modules
+import visual
+from particles import *
+from runparams import *
+from argparser import *
+from histogram import *
 
 
-#ROOT.gROOT.SetStyle('Plain') # white background
-#Loop through all Events and Fill the Histograms
-print 'Filling new jet histograms'
-enumber = 0
-for event in events:
-        #print "In event ", event
-	event.getByLabel (label, handle)
-	GenJets = handle.product()
-	ievent = event
-	ievent.getByLabel ("generator", infohandle)
-	Infos = infohandle.product()
-	nJets = 0
-	firstJetpt = 0
-	secoundJetpt = 0
-	firstJeteta = 0
-	eventweight = Infos.weight()
-	for Jet in GenJets:
-		if Jet.pt() >= ptcut and abs(Jet.eta()) <= etacut:
-                        #for JetConstituent in Jet.getJetConstituents():
-                        #        print JetConstituent.pdgId(), " no of mothers ", JetConstituent.numberOfMothers()
-			nJets = nJets + 1
-                        pt.fill(eventweight,Jet.pt())
-			phi.fill(eventweight,Jet.phi())
-			theta.fill(eventweight,Jet.theta())
-			energy.fill(eventweight,Jet.energy())
-			if Jet.pt() >= firstJetpt and Jet.pt() >= secoundJetpt:
-				secoundJetpt = firstJetpt
-				firstJetpt = Jet.pt()
-				firstJeteta = Jet.eta()
-			elif Jet.pt() >= secoundJetpt and Jet.pt() <= firstJetpt:
-				secoundJetpt = Jet.pt()
-	enumber=enumber+1
-	firstjetpt.fill(eventweight,firstJetpt)
-	secoundjetpt.fill(eventweight,secoundJetpt)
-	firstjeteta.fill(eventweight,firstJeteta)
-	njets.fill(eventweight,nJets)
+IsInitialized = False
 
-pt.write()
-phi.write()
-theta.write()
-energy.write()
-firstjetpt.write()
-secoundjetpt.write()
-firstjeteta.write()
-njets.write()
-"""
-        print 'Filling new particle histograms'
-#for pevent in events:
-        print "In pevent"
-        pevent = event
-	toppt = 0
-	tbarpt = 0
-	pevent.getByLabel (particlelabel, particlehandle)
-        print "event nr ", pevent
-	GenParticles = particlehandle.product()
-	for particle in GenParticles:
-                if abs(particle.pdgId())<= 6 or particle.pdgId() == 21:
-                #if particle.numberOfDaughters() == 0:
-                        print "particle nr ", particle
-                        print particle.pdgId()
-#		if particle.pdgId() == 6:
-#			toppt = particle.pt()
-#		if particle.pdgId() == -6:
-#			tbarpt = particle.pt
-		#Htpt.Fill(toppt)
-		#Htbarpt.Fill(tbarpt)
-		#if toppt != 0 and tbarpt != 0:
-			#Httbarpt.Fill(toppt + tbarpt)
-"""
+class ExtractHistos(object):
+
+	def initialize(self):
+		#-------------------------------------------------#
+		#First use FW Lite from CMSSW
+		#-------------------- FW Lite --------------------#
+		cmsswbase = TString.getenv("CMSSW_BASE")
+		
+		print 'Loading FW Lite setup.\n'
+		gSystem.Load("libFWCoreFWLite.so")
+		ROOT.AutoLibraryLoader.enable()
+		gSystem.Load("libDataFormatsFWLite.so")
+		gSystem.Load("libDataFormatsPatCandidates.so")
+		#-------------------------------------------------#
+	def run(self, runParams):
+		global IsInitialized
+		if not IsInitialized:
+			self.initialize()
+			IsInitialized = True
+			
+		outputFileObject = TFile(runParams.outputFile,"RECREATE")
+		totalEventCount = 0
+		Break = False
+		
+		for currentCutIndex, currentCut in enumerate(runParams.pTCuts):
+			if Break:
+				break
+			events = Events (runParams.inputFileList)
+			
+			currentCutString = str(currentCut) #variable for names of histograms
+			#Definition of the Histogram
+			#Jet Histogram
+			njets = Histogram (outputFileObject, "HnJets"+currentCutString, "Number of Jets "+currentCutString, 15, -0.5, 14.5)
+			pt = Histogram(outputFileObject, "Hpt"+currentCutString,"Gen-Jet pt "+currentCutString,100,0,300)
+			phi = Histogram(outputFileObject, "Hphi"+currentCutString,"Gen-Jet Phi "+currentCutString,50,-pi,pi)
+			theta = Histogram(outputFileObject, "Htheta"+currentCutString,"Gen-Jet Theta "+currentCutString,50,0,pi)
+			energy = Histogram(outputFileObject, "Henergy"+currentCutString,"Gen-Jet Energy "+currentCutString,100,0,600)
+			firstjetpt = Histogram(outputFileObject, "HfirstJetpt"+currentCutString,"Pt of hardest Gen-Jet "+currentCutString, 100,0,300)
+			firstjeteta = Histogram(outputFileObject, "H1sJeteta"+currentCutString,"Eta of hardest Gen-Jet "+currentCutString,50,-5,5)
+			secondjetpt = Histogram(outputFileObject, "HsecondJetpt"+currentCutString,"Pt of 2nd hardest Gen-Jet "+currentCutString, 100,0,300)
+			isrjetpt = Histogram(outputFileObject, "Hisrjetpt"+currentCutString, "Pt of ISR-Jets "+currentCutString,100,0,300)
+			fsrjetpt = Histogram(outputFileObject, "Hfsrjetpt"+currentCutString, "Pt of FSR-Jets "+currentCutString,100,0,300)
+			nIsrJets = Histogram(outputFileObject, "HnIsrJets"+currentCutString,"Number of ISR Jets per Event "+currentCutString, 15, -0.5, 14.5)
+			nFsrJets = Histogram(outputFileObject, "HnFsrJets"+currentCutString,"Number of FSR Jets per Event "+currentCutString, 15, -0.5, 14.5)
+			
+			# create handle outside of loop
+			# Handle and lable are pointing at the Branch you want
+			handle  = Handle ('std::vector<reco::GenJet>')
+			label = ("ak5GenJets")
+			infohandle = Handle ('<GenEventInfoProduct>')
+			
+			#ROOT.gROOT.SetStyle('Plain') # white background
+			#Loop through all Events and Fill the Histogram
+			print 'Processing ' + str(events.size()) + ' events @ pTCut='+currentCutString+'GeV'
+			enumber = 0
+			if not runParams.useDebugOutput:
+				sys.stdout.write("[                                                  ]\r[")
+				sys.stdout.flush()
+			percentage50 = 0 
+			for currentEventIndex, currentEvent in enumerate(events):
+			
+				if len(runParams.events) > 0:
+					if currentEventIndex not in runParams.events:
+						continue
+			
+				totalEventCount = totalEventCount + 1
+				if runParams.maxEvents > -1 and totalEventCount > runParams.maxEvents:
+					Break = True
+					break
+			
+				if runParams.useDebugOutput:
+					print "Event #" + str(currentEventIndex)
+				else:
+					percentageNow = 50. * currentEventIndex / events.size()
+					if percentageNow >= percentage50+1:
+						percentage50 = percentage50 + 1 
+						sys.stdout.write('.')
+						sys.stdout.flush()	
+				currentEvent.getByLabel (label, handle)
+				GenJets = handle.product()
+				currentEvent.getByLabel ("generator", infohandle)
+				Infos = infohandle.product()
+				nJets = 0
+				firstJetpt = 0
+				secondJetpt = 0
+				firstJeteta = 0
+				nISRJets = 0
+				nFSRJets = 0
+				eventweight = Infos.weight()
+				
+#				thisEventHasBeenDiGraphed = False
+					
+				isrJets = []
+				fsrJets = []
+				vizReferenceParticle = None
+					
+				for currentJetIndex, currentJet in enumerate(GenJets):
+					if currentJet.pt() >= currentCut and abs(currentJet.eta()) <= runParams.etaCut:
+						nJets = nJets + 1
+						pt.fill(eventweight,currentJet.pt())
+						phi.fill(eventweight,currentJet.phi())
+						theta.fill(eventweight,currentJet.theta())
+						energy.fill(eventweight,currentJet.energy())
+						
+						# ISR/FSR implementation		
+						jetConsitituents = currentJet.getJetConstituents()
+						
+						hardest = False
+						iSS = False
+						fSS = False			
+						particle = jetConsitituents[0]
+						vizReferenceParticle = particle
+						
+							
+						while(True):
+							oldParticle = particle
+							try:
+								cs = abs(particle.status())
+								if runParams.useDebugOutput:
+									print ( GetParticleName( particle.pdgId() ) ),
+									print cs,
+								
+								if 21 <= cs <= 29:
+									hardest = True
+									if runParams.useDebugOutput:
+										print ( "[H]" ),
+								if 41 <= cs <= 49:
+									iSS = True
+									if runParams.useDebugOutput:
+										print ( "[IS]" ),
+								if 51 <= cs <= 59:
+									fSS = True
+									if runParams.useDebugOutput:
+										print ( "[FS]" ),
+								if runParams.useDebugOutput:
+									print (" <- "),
+									
+									
+								particle = particle.mother()
+								particle.mother() # this shall throw
+								
+								if not (particle is None):
+									vizReferenceParticle = particle
+
+							except ReferenceError:
+								if runParams.useDebugOutput:
+									print "."
+																
+								break
+							#break
+						if not hardest:
+							isrJets.append(currentJet)
+							isrjetpt.fill(eventweight,currentJet.pt())
+							nISRJets = nISRJets + 1
+							if runParams.useDebugOutput:
+								print ( "[ISR++]" ) 
+						if hardest:
+							fsrJets.append(currentJet)
+							fsrjetpt.fill(eventweight,currentJet.pt())
+							nFSRJets = nFSRJets + 1
+							if runParams.useDebugOutput: 
+								print ( "[FSR++]" )
+						if currentJet.pt() >= firstJetpt and currentJet.pt() >= secondJetpt:
+							secondJetpt = firstJetpt
+							firstJetpt = currentJet.pt()
+							firstJeteta = currentJet.eta()
+						elif currentJet.pt() >= secondJetpt and currentJet.pt() <= firstJetpt:
+							secondJetpt = currentJet.pt()
+							enumber=enumber+1
+						firstjetpt.fill(eventweight,firstJetpt)
+						secondjetpt.fill(eventweight,secondJetpt)
+						firstjeteta.fill(eventweight,firstJeteta)
+						
+				if runParams.useVisualization:
+					fileName = "cut" + currentCutString + "_event" + str(currentEventIndex);
+					#print "Her goes:"
+					#print str(vizReferenceParticle)
+					#print str(anotherParticle)
+					#var = raw_input("This is Visual Function Pre Call")
+
+					visual.GraphViz(fileName, vizReferenceParticle, isrJets, fsrJets)
+						
+				njets.fill(eventweight,nJets)
+				nIsrJets.fill(eventweight,min(15,nISRJets))
+				nFsrJets.fill(eventweight,min(15,nFSRJets))
+				
+			#write all histograms in the output file. After they are wrote, they are getting deleted (s. write() method)
+			pt.write()
+			phi.write()
+			theta.write()
+			energy.write()
+			firstjetpt.write()
+			secondjetpt.write()
+			firstjeteta.write()
+			njets.write()
+			isrjetpt.write()
+			fsrjetpt.write()
+			nIsrJets.write()
+			nFsrJets.write()
+			#delete all variables, that are used again in the next loop
+			del handle
+			del label
+			del infohandle
+			del events
+			sys.stdout.write('.\n')
+			sys.stdout.flush()
+		#if runParams.useVisualization:
+			#visual.GraphViz_WaitForThreads()
+
+if __name__ == '__main__':
+	try:
+		argParser = ArgParser(sys.argv)
+		if not argParser.runParams.run:
+			sys.exit()
+		extractHistos = ExtractHistos()
+		extractHistos.run(argParser.runParams)
+	except SystemExit:
+		sys.exit()
+	except:
+		print "Exception: ", sys.exc_info()[1]
+		print "Try --info"
+		exit
+    

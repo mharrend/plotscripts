@@ -1,0 +1,9 @@
+# reproducable file types:
+*.pyc
+*.root
+*.di
+*.png
+
+# kate temp files:
+*.*~
+*~
