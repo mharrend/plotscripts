@@ -136,8 +136,9 @@ class ArgParser(object):
 			if thisFile[:7] == "/store/":
 				if not os.path.isfile(thisFile):
 					thisFile = "root://xrootd.ba.infn.it" + thisFile
-			if not os.path.isfile(thisFile):
-				raise Exception("File '" + thisFile + "' does not exist!")
+			else:
+				if not os.path.isfile(thisFile):
+					raise Exception("File '" + thisFile + "' does not exist!")
 			self.runParams.inputFileList.append(thisFile)
 			continue
 		
