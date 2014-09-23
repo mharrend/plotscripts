@@ -34,6 +34,42 @@ class ExtractHistos(object):
 		gSystem.Load("libDataFormatsFWLite.so")
 		gSystem.Load("libDataFormatsPatCandidates.so")
 		#-------------------------------------------------#
+		
+	def getAllDaughters(self, referenceParticle, currentList=[], nRecursions=-1):
+		numberOfDaughters = referenceParticle.numberOfDaughters()
+		for i in range (0,numberOfDaughters):
+			cParticle = referenceParticle.daughter(i)
+			currentList.append(cParticle)
+			if nRecursions <> 0:
+				self.getAllDaughters(cParticle,currentList,nRecursions-1)
+		return currentList
+		
+	def findSpecialHardParticles(self, referenceParticle, Ws = [], Hs = [], hasSeenT=False, hasSeenW=False, hasSeenH=False):
+		numberOfDaughters = referenceParticle.numberOfDaughters()
+		for i in range (0,numberOfDaughters):
+			cParticle = referenceParticle.daughter(i)
+			cStatus = cParticle.status()
+			
+			thisIsTop = False
+			thisIsW = False
+			thisIsH = False
+			
+			if 21 <= cStatus <= 29:
+				pdgId = abs(cParticle.pdgId())
+				if pdgId == 6:
+					thisIsTop = True
+				if pdgId == 24:
+					thisIsW = True
+					if hasSeenT and not hasSeenW:
+						Ws.append(cParticle)
+						continue
+				if pdgId == 25:
+					thisIsH = True
+					Hs.append(cParticle)
+					continue
+			self.findSpecialHardParticles(cParticle,Ws,Hs,hasSeenT or thisIsTop, hasSeenW or thisIsW , hasSeenH or thisIsH )
+		return Ws, Hs 
+		
 	def run(self, runParams):
 		global IsInitialized
 		if not IsInitialized:
@@ -114,7 +150,7 @@ class ExtractHistos(object):
 					
 				isrJets = []
 				fsrJets = []
-				vizReferenceParticle = None
+				referenceParticle = None
 					
 				for currentJetIndex, currentJet in enumerate(GenJets):
 					if currentJet.pt() >= currentCut and abs(currentJet.eta()) <= runParams.etaCut:
@@ -125,14 +161,13 @@ class ExtractHistos(object):
 						energy.fill(eventweight,currentJet.energy())
 						
 						# ISR/FSR implementation		
-						jetConsitituents = currentJet.getJetConstituents()
+						jetConstituents = currentJet.getJetConstituents()
 						
 						hardest = False
 						iSS = False
-						fSS = False			
-						particle = jetConsitituents[0]
-						vizReferenceParticle = particle
-						
+						fSS = False	
+						particle = jetConstituents[0]
+						referenceParticle = particle
 							
 						while(True):
 							oldParticle = particle
@@ -157,31 +192,31 @@ class ExtractHistos(object):
 								if runParams.useDebugOutput:
 									print (" <- "),
 									
-									
 								particle = particle.mother()
 								particle.mother() # this shall throw
 								
 								if not (particle is None):
-									vizReferenceParticle = particle
+									referenceParticle = particle
 
 							except ReferenceError:
 								if runParams.useDebugOutput:
 									print "."
-																
 								break
 							#break
-						if not hardest:
+							
+						if iSS:
 							isrJets.append(currentJet)
 							isrjetpt.fill(eventweight,currentJet.pt())
 							nISRJets = nISRJets + 1
 							if runParams.useDebugOutput:
 								print ( "[ISR++]" ) 
-						if hardest:
-							fsrJets.append(currentJet)
-							fsrjetpt.fill(eventweight,currentJet.pt())
-							nFSRJets = nFSRJets + 1
-							if runParams.useDebugOutput: 
-								print ( "[FSR++]" )
+						#if hardest:
+						#	fsrJets.append(currentJet)
+						#	fsrjetpt.fill(eventweight,currentJet.pt())
+						#	nFSRJets = nFSRJets + 1
+						#	if runParams.useDebugOutput: 
+						#		print ( "[FSR++]" )
+											
 						if currentJet.pt() >= firstJetpt and currentJet.pt() >= secondJetpt:
 							secondJetpt = firstJetpt
 							firstJetpt = currentJet.pt()
@@ -193,14 +228,13 @@ class ExtractHistos(object):
 						secondjetpt.fill(eventweight,secondJetpt)
 						firstjeteta.fill(eventweight,firstJeteta)
 						
+				Ws, Hs = self.findSpecialHardParticles(referenceParticle)
+				
+				#print "Found: " + str(len(Ws)) + " Ws and " + str(len(Hs)) + " Hs." 
+						
 				if runParams.useVisualization:
 					fileName = "cut" + currentCutString + "_event" + str(currentEventIndex);
-					#print "Her goes:"
-					#print str(vizReferenceParticle)
-					#print str(anotherParticle)
-					#var = raw_input("This is Visual Function Pre Call")
-
-					visual.GraphViz(fileName, vizReferenceParticle, isrJets, fsrJets)
+					visual.GraphViz(fileName, referenceParticle, isrJets, fsrJets, Ws, Hs)
 						
 				njets.fill(eventweight,nJets)
 				nIsrJets.fill(eventweight,min(15,nISRJets))
