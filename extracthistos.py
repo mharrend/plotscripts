@@ -35,13 +35,16 @@ class ExtractHistos(object):
 		gSystem.Load("libDataFormatsPatCandidates.so")
 		#-------------------------------------------------#
 		
-	def getAllDaughters(self, referenceParticle, currentList=[], nRecursions=-1):
+	def getAllDaughters(self, referenceParticle, currentList=[], nRecursions=-1, onlyFinal=False):
 		numberOfDaughters = referenceParticle.numberOfDaughters()
 		for i in range (0,numberOfDaughters):
 			cParticle = referenceParticle.daughter(i)
-			currentList.append(cParticle)
+			if not onlyFinal:
+				currentList.append(cParticle)
 			if nRecursions <> 0:
-				self.getAllDaughters(cParticle,currentList,nRecursions-1)
+				self.getAllDaughters(cParticle,currentList,nRecursions-1, onlyFinal)
+		if onlyFinal and numberOfDaughters == 0 and nRecursions <> -1:
+			currentList.append(referenceParticle)
 		return currentList
 		
 	def findSpecialHardParticles(self, referenceParticle, Ws = [], Bs = [], Hs = [], hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
@@ -101,9 +104,12 @@ class ExtractHistos(object):
 			W_Pt = Histogram(outputFileObject, "HWpt"+currentCutString,"W-Boson pT "+currentCutString,100,0,300)
 			B_Pt = Histogram(outputFileObject, "HBpt"+currentCutString,"B-Quark pT "+currentCutString,100,0,300)
 			H_Pt = Histogram(outputFileObject, "HHpt"+currentCutString,"Higgs pT "+currentCutString,100,0,300)
-			W_E = Histogram(outputFileObject, "HWE"+currentCutString,"W-Boson E "+currentCutString,100,0,300)
-			B_E = Histogram(outputFileObject, "HBE"+currentCutString,"B-Quark E "+currentCutString,100,0,300)
-			H_E = Histogram(outputFileObject, "HHE"+currentCutString,"Higgs E "+currentCutString,100,0,300)
+			W_E = Histogram(outputFileObject, "HWE"+currentCutString,"W-Boson Energy "+currentCutString,100,0,300)
+			B_E = Histogram(outputFileObject, "HBE"+currentCutString,"B-Quark Energy "+currentCutString,100,0,300)
+			H_E = Histogram(outputFileObject, "HHE"+currentCutString,"Higgs Energy "+currentCutString,100,0,300)
+			W_deltaR = Histogram(outputFileObject, "HWdeltaR"+currentCutString,"W-Boson deltaR "+currentCutString,100,0,300)
+			B_deltaR = Histogram(outputFileObject, "HBdeltaR"+currentCutString,"B-Quark deltaR "+currentCutString,100,0,300)
+			H_deltaR = Histogram(outputFileObject, "HHdeltaR"+currentCutString,"Higgs deltaR "+currentCutString,100,0,300)
 			
 			phi = Histogram(outputFileObject, "Hphi"+currentCutString,"Gen-Jet Phi "+currentCutString,50,-pi,pi)
 			theta = Histogram(outputFileObject, "Htheta"+currentCutString,"Gen-Jet Theta "+currentCutString,50,0,pi)
@@ -188,24 +194,24 @@ class ExtractHistos(object):
 							oldParticle = particle
 							try:
 								cs = abs(particle.status())
-								if runParams.useDebugOutput:
-									print ( GetParticleName( particle.pdgId() ) ),
-									print cs,
+								#if runParams.useDebugOutput:
+									#print ( GetParticleName( particle.pdgId() ) ),
+									#print cs,
 								
 								if 21 <= cs <= 29:
 									hardest = True
-									if runParams.useDebugOutput:
-										print ( "[H]" ),
+									#if runParams.useDebugOutput:
+										#print ( "[H]" ),
 								if 41 <= cs <= 49:
 									iSS = True
-									if runParams.useDebugOutput:
-										print ( "[IS]" ),
+									#if runParams.useDebugOutput:
+										#print ( "[IS]" ),
 								if 51 <= cs <= 59:
 									fSS = True
-									if runParams.useDebugOutput:
-										print ( "[FS]" ),
-								if runParams.useDebugOutput:
-									print (" <- "),
+									#if runParams.useDebugOutput:
+										#print ( "[FS]" ),
+								#if runParams.useDebugOutput:
+									#print (" <- "),
 									
 								particle = particle.mother()
 								particle.mother() # this shall throw
@@ -214,8 +220,8 @@ class ExtractHistos(object):
 									referenceParticle = particle
 
 							except ReferenceError:
-								if runParams.useDebugOutput:
-									print "."
+								#if runParams.useDebugOutput:
+									#print "."
 								break
 							#break
 							
@@ -251,14 +257,26 @@ class ExtractHistos(object):
 				
 				
 				for w in Ws:
+					if runParams.useDebugOutput:
+						allFinalDaughters = self.getAllDaughters(w, [], -1, True)
+						sum = w.p4() - w.p4()
+						#print "First.M()=" + str(sum.M())
+						for f in allFinalDaughters:
+							if f.status() <> 1:
+								print GetParticleName(f.pdgId()) + " [" + str(f.status()) + "] M=" + str(f.p4().M())
+							sum = sum + f.p4()
+						print "w M=" + str(w.p4().M()) + ", sum final Daughters M=" + str(sum.M())
 					W_Pt.fill(eventweight,w.pt())
 					W_E.fill(eventweight,w.energy())
+					#W_E.fill(eventweight,w.deltaR())
 				for b in Bs:
-					B_Pt.fill(eventweight,w.pt())
-					B_E.fill(eventweight,w.energy())
+					B_Pt.fill(eventweight,b.pt())
+					B_E.fill(eventweight,b.energy())
+					#B_E.fill(eventweight,b.deltaR())
 				for h in Hs:
-					H_Pt.fill(eventweight,w.pt())
-					H_E.fill(eventweight,w.energy())
+					H_Pt.fill(eventweight,h.pt())
+					H_E.fill(eventweight,h.energy())
+					#H_E.fill(eventweight,h.deltaR())
 				
 				#print "Found: " + str(len(Ws)) + " Ws and " + str(len(Bs)) + " Bs and " + str(len(Hs)) + " Hs." 
 						
