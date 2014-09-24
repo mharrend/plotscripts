@@ -174,6 +174,13 @@ class ExtractHistos(object):
 				referenceParticle = None
 					
 				for currentJetIndex, currentJet in enumerate(GenJets):
+					
+					#print '\n* Methods *'
+					#for names in dir(currentJet):
+						#attr = getattr(currentJet,names)
+						#if callable(attr):
+							#print names,':',attr.__doc__
+					
 					if currentJet.pt() >= currentCut and abs(currentJet.eta()) <= runParams.etaCut:
 						nJets = nJets + 1
 						pt.fill(eventweight,currentJet.pt())
