@@ -237,12 +237,6 @@ class ExtractHistos(object):
 					
 				for currentJetIndex, currentJet in enumerate(GenJets):
 					
-					#print '\n* Methods *'
-					#for names in dir(currentJet):
-						#attr = getattr(currentJet,names)
-						#if callable(attr):
-							#print names,':',attr.__doc__
-					
 					if currentJet.pt() >= currentCut and abs(currentJet.eta()) <= runParams.etaCut:
 						nJets = nJets + 1
 						pt.fill(eventweight,currentJet.pt())
@@ -250,7 +244,6 @@ class ExtractHistos(object):
 						theta.fill(eventweight,currentJet.theta())
 						energy.fill(eventweight,currentJet.energy())
 						
-						# ISR/FSR implementation	
 						jetConstituents = currentJet.getJetConstituents()
 						
 						hardest = False
@@ -263,24 +256,13 @@ class ExtractHistos(object):
 							oldParticle = particle
 							try:
 								cs = abs(particle.status())
-								#if runParams.useDebugOutput:
-									#print ( GetParticleName( particle.pdgId() ) ),
-									#print cs,
 								
 								if 21 <= cs <= 29:
 									hardest = True
-									#if runParams.useDebugOutput:
-										#print ( "[H]" ),
 								if 41 <= cs <= 49:
 									iSS = True
-									#if runParams.useDebugOutput:
-										#print ( "[IS]" ),
 								if 51 <= cs <= 59:
 									fSS = True
-									#if runParams.useDebugOutput:
-										#print ( "[FS]" ),
-								#if runParams.useDebugOutput:
-									#print (" <- "),
 									
 								particle = particle.mother()
 								particle.mother() # this shall throw
@@ -289,23 +271,19 @@ class ExtractHistos(object):
 									referenceParticle = particle
 
 							except ReferenceError:
-								#if runParams.useDebugOutput:
-									#print "."
 								break
-							#break
-							
-						if iSS:
+						if not hardest:
 							isrJets.append(currentJet)
 							isrjetpt.fill(eventweight,currentJet.pt())
 							nISRJets = nISRJets + 1
 							if runParams.useDebugOutput:
 								print ( "[ISR++]" ) 
-						#if hardest:
-						#	fsrJets.append(currentJet)
-						#	fsrjetpt.fill(eventweight,currentJet.pt())
-						#	nFSRJets = nFSRJets + 1
-						#	if runParams.useDebugOutput: 
-						#		print ( "[FSR++]" )
+						else:
+							fsrJets.append(currentJet)
+							fsrjetpt.fill(eventweight,currentJet.pt())
+							nFSRJets = nFSRJets + 1
+							if runParams.useDebugOutput: 
+								print ( "[FSR++]" )
 											
 						if currentJet.pt() >= firstJetpt and currentJet.pt() >= secondJetpt:
 							secondJetpt = firstJetpt
