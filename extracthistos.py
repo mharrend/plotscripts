@@ -110,6 +110,13 @@ class ExtractHistos(object):
 			W_deltaR = Histogram(outputFileObject, "HWdeltaR"+currentCutString,"W-Boson deltaR "+currentCutString,100,0,300)
 			B_deltaR = Histogram(outputFileObject, "HBdeltaR"+currentCutString,"B-Quark deltaR "+currentCutString,100,0,300)
 			H_deltaR = Histogram(outputFileObject, "HHdeltaR"+currentCutString,"Higgs deltaR "+currentCutString,100,0,300)
+			W_M = Histogram(outputFileObject, "HWM"+currentCutString,"W-Boson mass "+currentCutString,100,0,1000)
+			B_M = Histogram(outputFileObject, "HBM"+currentCutString,"B-Quark mass "+currentCutString,100,0,1000)
+			H_M = Histogram(outputFileObject, "HHM"+currentCutString,"Higgs mass "+currentCutString,100,0,1000)
+			W_M_Children = Histogram(outputFileObject, "HWM_Children"+currentCutString,"W-Boson mass of children "+currentCutString,100,0,1000)
+			B_M_Children = Histogram(outputFileObject, "HBM_Children"+currentCutString,"B-Quark mass of children "+currentCutString,100,0,1000)
+			H_M_Children = Histogram(outputFileObject, "HHM_Children"+currentCutString,"Higgs mass of children "+currentCutString,100,0,1000)
+
 			
 			phi = Histogram(outputFileObject, "Hphi"+currentCutString,"Gen-Jet Phi "+currentCutString,50,-pi,pi)
 			theta = Histogram(outputFileObject, "Htheta"+currentCutString,"Gen-Jet Theta "+currentCutString,50,0,pi)
@@ -262,28 +269,89 @@ class ExtractHistos(object):
 						
 				Ws, Bs, Hs = self.findSpecialHardParticles(referenceParticle, Ws, Bs, Hs)
 				
-				for w in Ws:
+				for idx,w in enumerate(Ws):
 					if runParams.useDebugOutput:
+						print "[W#" + str(idx) + "]"
 						allChildren = self.getAllDaughters(w, [], -1, True)
-						sum = ROOT.Math.LorentzVector('ROOT::Math::PxPyPzE4D<double>')()
-						#sum = ROOT.Math.LorentzVector('ROOT::Math::PtEtaPhiE4D<double>')()
-						
-						#print "First.M()=" + str(sum.M())
+						sumP4 = ROOT.Math.LorentzVector('ROOT::Math::PxPyPzE4D<double>')()
+						sumPt = 0
+						sumM = 0
+						sumE = 0
 						for f in allChildren:
-							#if f.status() <> 1:
-							#	print GetParticleName(f.pdgId()) + " [" + str(f.status()) + "] p=" + str(f.p4().p())
-							sum = sum + f.p4()
-						print "w pt=" + str(w.p4().pt()) + ", sum allChildren pt=" + str(sum.pt())
-						print "w M=" + str(w.p4().M()) + ", sum allChildren M=" + str(sum.M())
-						print "w e=" + str(w.p4().energy()) + ", sum allChildren e=" + str(sum.energy())
+							sumP4 = sumP4 + f.p4()
+							sumPt = sumPt + f.pt()
+							sumM = sumM + f.p4().M()
+							sumE = sumE + f.energy()
+							
+						W_M.fill(eventweight,w.p4().M())
+						W_M_Children.fill(eventweight,sumP4.M())
+							
+						print "w p4.pt=" + str(w.p4().pt()) + ", sum allChildren pt=" + str(sumP4.pt())
+						print "w p4.M=" + str(w.p4().M()) + ", sum allChildren M=" + str(sumP4.M())
+						print "w p4.e=" + str(w.p4().energy()) + ", sum allChildren e=" + str(sumP4.energy())
+						
+						print "sum pT allChildren =" + str(sumPt)
+						print "sum M allChildren =" + str(sumM)
+						print "sum E allChildren =" + str(sumE)
+					
 					W_Pt.fill(eventweight,w.pt())
 					W_E.fill(eventweight,w.energy())
 					#W_E.fill(eventweight,w.deltaR())
-				for b in Bs:
+				for idx,b in enumerate( Bs ):
+					
+					if runParams.useDebugOutput:
+						print "[B#" + str(idx) + "]"
+						allChildren = self.getAllDaughters(b, [], -1, True)
+						sumP4 = ROOT.Math.LorentzVector('ROOT::Math::PxPyPzE4D<double>')()
+						sumPt = 0
+						sumM = 0
+						sumE = 0
+						for f in allChildren:
+							sumP4 = sumP4 + f.p4()
+							sumPt = sumPt + f.pt()
+							sumM = sumM + f.p4().M()
+							sumE = sumE + f.energy()
+							
+						B_M.fill(eventweight,b.p4().M())
+						B_M_Children.fill(eventweight,sumP4.M())
+							
+						print "b p4.pt=" + str(b.p4().pt()) + ", sum allChildren pt=" + str(sumP4.pt())
+						print "b p4.M=" + str(b.p4().M()) + ", sum allChildren M=" + str(sumP4.M())
+						print "b p4.e=" + str(b.p4().energy()) + ", sum allChildren e=" + str(sumP4.energy())
+						
+						print "sum pT allChildren =" + str(sumPt)
+						print "sum M allChildren =" + str(sumM)
+						print "sum E allChildren =" + str(sumE)
+					
 					B_Pt.fill(eventweight,b.pt())
 					B_E.fill(eventweight,b.energy())
 					#B_E.fill(eventweight,b.deltaR())
-				for h in Hs:
+				for idx,h in enumerate( Hs):
+					
+					if runParams.useDebugOutput:
+						print "[H#" + str(idx) + "]"
+						allChildren = self.getAllDaughters(h, [], -1, True)
+						sumP4 = ROOT.Math.LorentzVector('ROOT::Math::PxPyPzE4D<double>')()
+						sumPt = 0
+						sumM = 0
+						sumE = 0
+						for f in allChildren:
+							sumP4 = sumP4 + f.p4()
+							sumPt = sumPt + f.pt()
+							sumM = sumM + f.p4().M()
+							sumE = sumE + f.energy()
+							
+						H_M.fill(eventweight,h.p4().M())
+						H_M_Children.fill(eventweight,sumP4.M())
+							
+						print "h p4.pt=" + str(h.p4().pt()) + ", sum allChildren pt=" + str(sumP4.pt())
+						print "h p4.M=" + str(h.p4().M()) + ", sum allChildren M=" + str(sumP4.M())
+						print "h p4.e=" + str(h.p4().energy()) + ", sum allChildren e=" + str(sumP4.energy())
+						
+						print "sum pT allChildren =" + str(sumPt)
+						print "sum M allChildren =" + str(sumM)
+						print "sum E allChildren =" + str(sumE)
+					
 					H_Pt.fill(eventweight,h.pt())
 					H_E.fill(eventweight,h.energy())
 					#H_E.fill(eventweight,h.deltaR())
@@ -313,10 +381,16 @@ class ExtractHistos(object):
 			nFsrJets.write()
 			W_Pt.write()
 			W_E.write()
+			W_M.write()
+			W_M_Children.write()
 			B_Pt.write()
 			B_E.write()
+			B_M.write()
+			B_M_Children.write()
 			H_Pt.write()
 			H_E.write()
+			H_M.write()
+			H_M_Children.write()
 			#delete all variables, that are used again in the next loop
 			del handle
 			del label
