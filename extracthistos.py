@@ -10,6 +10,8 @@ import os
 import ROOT
 from ROOT import TH1F, TFile, TTree, TString, gSystem
 
+from sets import Set
+
 # sibling modules
 import visual
 from particles import *
@@ -35,16 +37,33 @@ class ExtractHistos(object):
 		gSystem.Load("libDataFormatsPatCandidates.so")
 		#-------------------------------------------------#
 		
-	def getAllDaughters(self, referenceParticle, currentList=[], nRecursions=-1, onlyFinal=False):
+	def particleIsIn(self,particle,jets):
+		for jet in jets:
+			numberOfDaughters = jet.numberOfDaughters()
+			for i in range (0,numberOfDaughters):
+				cParticle = jet.daughter(i)
+				if cParticle == particle:
+					return True
+		return False
+		
+	def getAllRelevantDaughters(self, runParams, referenceParticle, referenceJets, currentList=Set()):
 		numberOfDaughters = referenceParticle.numberOfDaughters()
+		
+		if referenceParticle.status() < 10 and self.particleIsIn(referenceParticle,referenceJets):
+			#if runParams.useDebugOutput:
+				#print " " * abs(nRecursions) + "*" + GetParticleName( referenceParticle.pdgId() ) + "[" + str(referenceParticle.status()) + "]"
+
+			currentList.add(referenceParticle)
+			return currentList
+		
 		for i in range (0,numberOfDaughters):
+					
 			cParticle = referenceParticle.daughter(i)
-			if not onlyFinal:
-				currentList.append(cParticle)
-			if nRecursions <> 0:
-				self.getAllDaughters(cParticle,currentList,nRecursions-1, onlyFinal)
-		if onlyFinal and numberOfDaughters == 0 and nRecursions <> -1:
-			currentList.append(referenceParticle)
+			
+			#if runParams.useDebugOutput:
+				#print " " * abs(nRecursions) + ">" + GetParticleName( cParticle.pdgId() ) + "[" + str(cParticle.status()) + "]" 
+			
+			self.getAllRelevantDaughters(runParams, cParticle,referenceJets, currentList)
 		return currentList
 		
 	def findSpecialHardParticles(self, referenceParticle, Ws = [], Bs = [], Hs = [], hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
@@ -195,7 +214,7 @@ class ExtractHistos(object):
 						theta.fill(eventweight,currentJet.theta())
 						energy.fill(eventweight,currentJet.energy())
 						
-						# ISR/FSR implementation		
+						# ISR/FSR implementation	
 						jetConstituents = currentJet.getJetConstituents()
 						
 						hardest = False
@@ -272,16 +291,13 @@ class ExtractHistos(object):
 				for idx,w in enumerate(Ws):
 					if runParams.useDebugOutput:
 						print "[W#" + str(idx) + "]"
-						allChildren = self.getAllDaughters(w, [], -1, True)
+						allChildren = self.getAllRelevantDaughters(runParams, w, GenJets, Set())
 						sumP4 = ROOT.Math.LorentzVector('ROOT::Math::PxPyPzE4D<double>')()
-						sumPt = 0
-						sumM = 0
-						sumE = 0
+						
+						print "nAllChildren: " + str(len(allChildren))
+										
 						for f in allChildren:
 							sumP4 = sumP4 + f.p4()
-							sumPt = sumPt + f.pt()
-							sumM = sumM + f.p4().M()
-							sumE = sumE + f.energy()
 							
 						W_M.fill(eventweight,w.p4().M())
 						W_M_Children.fill(eventweight,sumP4.M())
@@ -289,10 +305,6 @@ class ExtractHistos(object):
 						print "w p4.pt=" + str(w.p4().pt()) + ", sum allChildren pt=" + str(sumP4.pt())
 						print "w p4.M=" + str(w.p4().M()) + ", sum allChildren M=" + str(sumP4.M())
 						print "w p4.e=" + str(w.p4().energy()) + ", sum allChildren e=" + str(sumP4.energy())
-						
-						print "sum pT allChildren =" + str(sumPt)
-						print "sum M allChildren =" + str(sumM)
-						print "sum E allChildren =" + str(sumE)
 					
 					W_Pt.fill(eventweight,w.pt())
 					W_E.fill(eventweight,w.energy())
@@ -301,16 +313,13 @@ class ExtractHistos(object):
 					
 					if runParams.useDebugOutput:
 						print "[B#" + str(idx) + "]"
-						allChildren = self.getAllDaughters(b, [], -1, True)
+						allChildren = self.getAllRelevantDaughters(runParams, b, GenJets, Set())
 						sumP4 = ROOT.Math.LorentzVector('ROOT::Math::PxPyPzE4D<double>')()
-						sumPt = 0
-						sumM = 0
-						sumE = 0
+						
+						print "nAllChildren: " + str(len(allChildren))
+						
 						for f in allChildren:
 							sumP4 = sumP4 + f.p4()
-							sumPt = sumPt + f.pt()
-							sumM = sumM + f.p4().M()
-							sumE = sumE + f.energy()
 							
 						B_M.fill(eventweight,b.p4().M())
 						B_M_Children.fill(eventweight,sumP4.M())
@@ -319,9 +328,6 @@ class ExtractHistos(object):
 						print "b p4.M=" + str(b.p4().M()) + ", sum allChildren M=" + str(sumP4.M())
 						print "b p4.e=" + str(b.p4().energy()) + ", sum allChildren e=" + str(sumP4.energy())
 						
-						print "sum pT allChildren =" + str(sumPt)
-						print "sum M allChildren =" + str(sumM)
-						print "sum E allChildren =" + str(sumE)
 					
 					B_Pt.fill(eventweight,b.pt())
 					B_E.fill(eventweight,b.energy())
@@ -330,16 +336,13 @@ class ExtractHistos(object):
 					
 					if runParams.useDebugOutput:
 						print "[H#" + str(idx) + "]"
-						allChildren = self.getAllDaughters(h, [], -1, True)
+						allChildren = self.getAllRelevantDaughters(runParams, h, GenJets, Set())
 						sumP4 = ROOT.Math.LorentzVector('ROOT::Math::PxPyPzE4D<double>')()
-						sumPt = 0
-						sumM = 0
-						sumE = 0
+						
+						print "nAllChildren: " + str(len(allChildren))
+						
 						for f in allChildren:
 							sumP4 = sumP4 + f.p4()
-							sumPt = sumPt + f.pt()
-							sumM = sumM + f.p4().M()
-							sumE = sumE + f.energy()
 							
 						H_M.fill(eventweight,h.p4().M())
 						H_M_Children.fill(eventweight,sumP4.M())
@@ -347,11 +350,7 @@ class ExtractHistos(object):
 						print "h p4.pt=" + str(h.p4().pt()) + ", sum allChildren pt=" + str(sumP4.pt())
 						print "h p4.M=" + str(h.p4().M()) + ", sum allChildren M=" + str(sumP4.M())
 						print "h p4.e=" + str(h.p4().energy()) + ", sum allChildren e=" + str(sumP4.energy())
-						
-						print "sum pT allChildren =" + str(sumPt)
-						print "sum M allChildren =" + str(sumM)
-						print "sum E allChildren =" + str(sumE)
-					
+											
 					H_Pt.fill(eventweight,h.pt())
 					H_E.fill(eventweight,h.energy())
 					#H_E.fill(eventweight,h.deltaR())

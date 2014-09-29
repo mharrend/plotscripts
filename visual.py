@@ -139,7 +139,7 @@ def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets, Ws, Bs, Hs, isWD
 		for h in Hs:
 			if p == h:
 				isHDaughter = True
-
+				
 		if not (isWDaughter or isBDaughter or isHDaughter):
 
 			for numJet, jet in enumerate(isr_jets):
