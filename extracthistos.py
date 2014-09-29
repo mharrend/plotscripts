@@ -37,19 +37,10 @@ class ExtractHistos(object):
 		gSystem.Load("libDataFormatsPatCandidates.so")
 		#-------------------------------------------------#
 		
-	def particleIsIn(self,particle,jets):
-		for jet in jets:
-			numberOfDaughters = jet.numberOfDaughters()
-			for i in range (0,numberOfDaughters):
-				cParticle = jet.daughter(i)
-				if cParticle == particle:
-					return True
-		return False
-		
 	def getAllRelevantDaughters(self, runParams, referenceParticle, referenceJets, currentList=Set()):
 		numberOfDaughters = referenceParticle.numberOfDaughters()
 		
-		if referenceParticle.status() < 10 and self.particleIsIn(referenceParticle,referenceJets):
+		if referenceParticle.status() < 10:
 			#if runParams.useDebugOutput:
 				#print " " * abs(nRecursions) + "*" + GetParticleName( referenceParticle.pdgId() ) + "[" + str(referenceParticle.status()) + "]"
 
@@ -65,6 +56,22 @@ class ExtractHistos(object):
 			
 			self.getAllRelevantDaughters(runParams, cParticle,referenceJets, currentList)
 		return currentList
+		
+	def WGetDecayType(self, referenceParticle):
+			
+		numberOfDaughters = referenceParticle.numberOfDaughters()
+				
+		for i in range (0,numberOfDaughters):
+			
+			cParticle = referenceParticle.daughter(i)
+			absPdgId = abs(cParticle.pdgId())
+			
+			if absPdgId == 24:
+				return self.WGetDecayType(cParticle)
+			return 11 <= absPdgId <= 18, cParticle
+			
+		raise Exception("Invalid W Daughters in decay Search")
+
 		
 	def findSpecialHardParticles(self, referenceParticle, Ws = [], Bs = [], Hs = [], hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
 		if referenceParticle is not None:
@@ -129,12 +136,41 @@ class ExtractHistos(object):
 			W_deltaR = Histogram(outputFileObject, "HWdeltaR"+currentCutString,"W-Boson deltaR "+currentCutString,100,0,300)
 			B_deltaR = Histogram(outputFileObject, "HBdeltaR"+currentCutString,"B-Quark deltaR "+currentCutString,100,0,300)
 			H_deltaR = Histogram(outputFileObject, "HHdeltaR"+currentCutString,"Higgs deltaR "+currentCutString,100,0,300)
-			W_M = Histogram(outputFileObject, "HWM"+currentCutString,"W-Boson mass "+currentCutString,100,0,1000)
-			B_M = Histogram(outputFileObject, "HBM"+currentCutString,"B-Quark mass "+currentCutString,100,0,1000)
-			H_M = Histogram(outputFileObject, "HHM"+currentCutString,"Higgs mass "+currentCutString,100,0,1000)
-			W_M_Children = Histogram(outputFileObject, "HWM_Children"+currentCutString,"W-Boson mass of children "+currentCutString,100,0,1000)
-			B_M_Children = Histogram(outputFileObject, "HBM_Children"+currentCutString,"B-Quark mass of children "+currentCutString,100,0,1000)
-			H_M_Children = Histogram(outputFileObject, "HHM_Children"+currentCutString,"Higgs mass of children "+currentCutString,100,0,1000)
+			
+			W_Hadronic_Pt = Histogram(outputFileObject, "HWHpT"+currentCutString,"W-Boson Hadronic pT "+currentCutString,100,0,300)
+			W_Hadronic_E = Histogram(outputFileObject, "HWHE"+currentCutString,"W-Boson Hadronic Energy "+currentCutString,100,0,300)
+			W_Leptonic_Pt = Histogram(outputFileObject, "HWLpT"+currentCutString,"W-Boson Leptonic pT "+currentCutString,100,0,300)
+			W_Leptonic_E = Histogram(outputFileObject, "HWLE"+currentCutString,"W-Boson Leptonic Energy "+currentCutString,100,0,300)
+			
+			W_Leptonic_e_Pt = Histogram(outputFileObject, "HWLepT"+currentCutString,"W-Boson -> Electron pT "+currentCutString,100,0,300)
+			W_Leptonic_e_E = Histogram(outputFileObject, "HWLeE"+currentCutString,"W-Boson -> Electron Energy "+currentCutString,100,0,300)
+			W_Leptonic_nue_Pt = Histogram(outputFileObject, "HWLnuepT"+currentCutString,"W-Boson -> nu_e pT "+currentCutString,100,0,300)
+			W_Leptonic_nue_E = Histogram(outputFileObject, "HWLnueE"+currentCutString,"W-Boson -> nu_e Energy "+currentCutString,100,0,300)
+			
+			W_Leptonic_mu_Pt = Histogram(outputFileObject, "HWLmupT"+currentCutString,"W-Boson -> Muon pT "+currentCutString,100,0,300)
+			W_Leptonic_mu_E = Histogram(outputFileObject, "HWLmuE"+currentCutString,"W-Boson -> Muon Energy "+currentCutString,100,0,300)
+			W_Leptonic_numu_Pt = Histogram(outputFileObject, "HWLnumupT"+currentCutString,"W-Boson -> nu_mu pT "+currentCutString,100,0,300)
+			W_Leptonic_numu_E = Histogram(outputFileObject, "HWLnumuE"+currentCutString,"W-Boson -> nu_mu Energy "+currentCutString,100,0,300)
+			
+			W_Leptonic_t_Pt = Histogram(outputFileObject, "HWLtpT"+currentCutString,"W-Boson -> Tauon pT "+currentCutString,100,0,300)
+			W_Leptonic_t_E = Histogram(outputFileObject, "HWLtE"+currentCutString,"W-Boson -> Tauon Energy "+currentCutString,100,0,300)
+			W_Leptonic_nut_Pt = Histogram(outputFileObject, "HWLnutpT"+currentCutString,"W-Boson -> nu_t pT "+currentCutString,100,0,300)
+			W_Leptonic_nut_E = Histogram(outputFileObject, "HWLnutE"+currentCutString,"W-Boson -> nu_t Energy "+currentCutString,100,0,300)
+			
+			W_n_Leptonic = Histogram (outputFileObject, "HnWLeptonic"+currentCutString, "Number of Leptonic W-Decays "+currentCutString, 3, -0.5, 2.5)
+			W_n_Hadronic = Histogram (outputFileObject, "HnWHadronic"+currentCutString, "Number of Hadronic W-Decays "+currentCutString, 3, -0.5, 2.5)
+			
+			
+			
+			if runParams.useDebugOutput:
+			
+				W_M = Histogram(outputFileObject, "HWM"+currentCutString,"W-Boson mass "+currentCutString,100,0,1000)
+				B_M = Histogram(outputFileObject, "HBM"+currentCutString,"B-Quark mass "+currentCutString,100,0,1000)
+				H_M = Histogram(outputFileObject, "HHM"+currentCutString,"Higgs mass "+currentCutString,100,0,1000)
+	
+				W_M_Children = Histogram(outputFileObject, "HWM_Children"+currentCutString,"W-Boson mass of children "+currentCutString,100,0,1000)
+				B_M_Children = Histogram(outputFileObject, "HBM_Children"+currentCutString,"B-Quark mass of children "+currentCutString,100,0,1000)
+				H_M_Children = Histogram(outputFileObject, "HHM_Children"+currentCutString,"Higgs mass of children "+currentCutString,100,0,1000)
 
 			
 			phi = Histogram(outputFileObject, "Hphi"+currentCutString,"Gen-Jet Phi "+currentCutString,50,-pi,pi)
@@ -288,6 +324,9 @@ class ExtractHistos(object):
 						
 				Ws, Bs, Hs = self.findSpecialHardParticles(referenceParticle, Ws, Bs, Hs)
 				
+				nLeptonicWDecays = 0
+				nHadronicWDecays = 0
+				
 				for idx,w in enumerate(Ws):
 					if runParams.useDebugOutput:
 						print "[W#" + str(idx) + "]"
@@ -309,6 +348,46 @@ class ExtractHistos(object):
 					W_Pt.fill(eventweight,w.pt())
 					W_E.fill(eventweight,w.energy())
 					#W_E.fill(eventweight,w.deltaR())
+					
+					WDecay = self.WGetDecayType(w)
+					isLeptonic = WDecay[0]
+					WReferenceparticle = WDecay[1]
+					if isLeptonic:
+						nLeptonicWDecays = nLeptonicWDecays+1
+						W_Leptonic_Pt.fill(eventweight,WReferenceparticle.p4().pt())
+						W_Leptonic_E.fill(eventweight,WReferenceparticle.p4().energy())
+						
+						numDaughters = WReferenceparticle.numberOfDaughters()
+						for i in range (0, numDaughters):
+							cChild = WReferenceparticle.daughter(i)
+							pdgId = cChild.pdgId()
+							if pdgId == 11:
+								W_Leptonic_e_Pt.fill(eventweight,cChild.p4().pt())
+								W_Leptonic_e_E.fill(eventweight,cChild.p4().energy())
+							if pdgId == 12:
+								W_Leptonic_nue_Pt.fill(eventweight,cChild.p4().pt())
+								W_Leptonic_nue_E.fill(eventweight,cChild.p4().energy())
+							if pdgId == 13:
+								W_Leptonic_mu_Pt.fill(eventweight,cChild.p4().pt())
+								W_Leptonic_mu_E.fill(eventweight,cChild.p4().energy())
+							if pdgId == 14:
+								W_Leptonic_numu_Pt.fill(eventweight,cChild.p4().pt())
+								W_Leptonic_numu_E.fill(eventweight,cChild.p4().energy())
+							if pdgId == 15:
+								W_Leptonic_t_Pt.fill(eventweight,cChild.p4().pt())
+								W_Leptonic_t_E.fill(eventweight,cChild.p4().energy())
+							if pdgId == 16:
+								W_Leptonic_nut_Pt.fill(eventweight,cChild.p4().pt())
+								W_Leptonic_nut_E.fill(eventweight,cChild.p4().energy())
+								
+					else:
+						nHadronicWDecays = nHadronicWDecays+1
+						W_Hadronic_Pt.fill(eventweight,WReferenceparticle.p4().pt())
+						W_Hadronic_E.fill(eventweight,WReferenceparticle.p4().energy())
+					
+				W_n_Leptonic.fill(eventweight,nLeptonicWDecays)
+				W_n_Hadronic.fill(eventweight,nHadronicWDecays)
+					
 				for idx,b in enumerate( Bs ):
 					
 					if runParams.useDebugOutput:
@@ -380,16 +459,40 @@ class ExtractHistos(object):
 			nFsrJets.write()
 			W_Pt.write()
 			W_E.write()
-			W_M.write()
-			W_M_Children.write()
 			B_Pt.write()
 			B_E.write()
-			B_M.write()
-			B_M_Children.write()
 			H_Pt.write()
 			H_E.write()
-			H_M.write()
-			H_M_Children.write()
+			
+			W_n_Leptonic.write()
+			W_n_Hadronic.write()
+			
+			if runParams.useDebugOutput:
+				W_M.write()
+				W_M_Children.write()
+				B_M.write()
+				B_M_Children.write()
+				H_M.write()
+				H_M_Children.write()
+			
+			W_Leptonic_Pt.write()
+			W_Leptonic_E.write()
+			W_Hadronic_Pt.write()
+			W_Hadronic_E.write()
+			
+			W_Leptonic_e_Pt.write()
+			W_Leptonic_e_E.write()
+			W_Leptonic_nue_Pt.write()
+			W_Leptonic_nue_E.write()
+			W_Leptonic_mu_Pt.write()
+			W_Leptonic_mu_E.write()
+			W_Leptonic_numu_Pt.write()
+			W_Leptonic_numu_E.write()
+			W_Leptonic_t_Pt.write()
+			W_Leptonic_t_E.write()
+			W_Leptonic_nut_Pt.write()
+			W_Leptonic_nut_E.write()
+			
 			#delete all variables, that are used again in the next loop
 			del handle
 			del label
