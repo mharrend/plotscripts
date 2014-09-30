@@ -9,8 +9,8 @@ import os
 
 import ROOT
 from ROOT import TH1F, TFile, TTree, TString, gSystem
-
 from sets import Set
+import time
 
 # sibling modules
 import visual
@@ -37,7 +37,7 @@ class ExtractHistos(object):
 		gSystem.Load("libDataFormatsPatCandidates.so")
 		#-------------------------------------------------#
 		
-	def getAllRelevantDaughters(self, referenceParticle, referenceJets, currentList=Set()):
+	def getAllRelevantDaughters(self, referenceParticle, referenceJets, currentList):
 		numberOfDaughters = referenceParticle.numberOfDaughters()
 		
 		if referenceParticle.status() < 10:
@@ -45,7 +45,7 @@ class ExtractHistos(object):
 				#print " " * abs(nRecursions) + "*" + GetParticleName( referenceParticle.pdgId() ) + "[" + str(referenceParticle.status()) + "]"
 
 			currentList.add(referenceParticle)
-			return currentList
+			return
 		
 		for i in range (0,numberOfDaughters):
 					
@@ -55,7 +55,7 @@ class ExtractHistos(object):
 				#print " " * abs(nRecursions) + ">" + GetParticleName( cParticle.pdgId() ) + "[" + str(cParticle.status()) + "]" 
 			
 			self.getAllRelevantDaughters(cParticle,referenceJets, currentList)
-		return currentList
+		return
 		
 	def WGetDecayType(self, referenceParticle):
 			
@@ -147,18 +147,11 @@ class ExtractHistos(object):
 		
 		self.W_n_Leptonic = Histogram (self.outputFileObject, "HnWLeptonic"+self.currentCutString, "Number of Leptonic W-Decays "+self.currentCutString, 3, -0.5, 2.5)
 		self.W_n_Hadronic = Histogram (self.outputFileObject, "HnWHadronic"+self.currentCutString, "Number of Hadronic W-Decays "+self.currentCutString, 3, -0.5, 2.5)	
-		
-		if self.runParams.useDebugOutput:
 			
-			self.W_M = Histogram(self.outputFileObject, "HWM"+self.currentCutString,"W-Boson mass "+self.currentCutString,100,0,1000)
-			self.B_M = Histogram(self.outputFileObject, "HBM"+self.currentCutString,"B-Quark mass "+self.currentCutString,100,0,1000)
-			self.H_M = Histogram(self.outputFileObject, "HHM"+self.currentCutString,"Higgs mass "+self.currentCutString,100,0,1000)
+		self.W_M = Histogram(self.outputFileObject, "HWM"+self.currentCutString,"W-Boson mass "+self.currentCutString,100,0,1000)
+		self.B_M = Histogram(self.outputFileObject, "HBM"+self.currentCutString,"B-Quark mass "+self.currentCutString,100,0,1000)
+		self.H_M = Histogram(self.outputFileObject, "HHM"+self.currentCutString,"Higgs mass "+self.currentCutString,100,0,1000)
 
-			self.W_M_Children = Histogram(self.outputFileObject, "HWM_Children"+self.currentCutString,"W-Boson mass of children "+self.currentCutString,100,0,1000)
-			self.B_M_Children = Histogram(self.outputFileObject, "HBM_Children"+self.currentCutString,"B-Quark mass of children "+self.currentCutString,100,0,1000)
-			self.H_M_Children = Histogram(self.outputFileObject, "HHM_Children"+self.currentCutString,"Higgs mass of children "+self.currentCutString,100,0,1000)
-
-			
 		self.phi = Histogram(self.outputFileObject, "Hphi"+self.currentCutString,"Gen-Jet Phi "+self.currentCutString,50,-pi,pi)
 		self.theta = Histogram(self.outputFileObject, "Htheta"+self.currentCutString,"Gen-Jet Theta "+self.currentCutString,50,0,pi)
 		self.energy = Histogram(self.outputFileObject, "Henergy"+self.currentCutString,"Gen-Jet Energy "+self.currentCutString,100,0,600)
@@ -264,24 +257,9 @@ class ExtractHistos(object):
 	  nHadronicWDecays = 0
 	  
 	  for idx,w in enumerate(Ws):
-		  if self.runParams.useDebugOutput:
-			  print "[W#" + str(idx) + "]"
-			  allChildren = self.getAllRelevantDaughters( w, GenJets, Set())
-			  sumP4 = ROOT.Math.LorentzVector('ROOT::Math::PxPyPzE4D<double>')()
-			  
-			  print "nAllChildren: " + str(len(allChildren))
-							  
-			  for f in allChildren:
-				  sumP4 = sumP4 + f.p4()
-				  
-			  self.W_M.fill(eventweight,w.p4().M())
-			  self.W_M_Children.fill(eventweight,sumP4.M())
-				  
-			  print "w p4.pt=" + str(w.p4().pt()) + ", sum allChildren pt=" + str(sumP4.pt())
-			  print "w p4.M=" + str(w.p4().M()) + ", sum allChildren M=" + str(sumP4.M())
-			  print "w p4.e=" + str(w.p4().energy()) + ", sum allChildren e=" + str(sumP4.energy())
 		  
 		  self.W_Pt.fill(eventweight,w.pt())
+		  self.W_M.fill(eventweight,w.p4().M())
 		  self.W_E.fill(eventweight,w.energy())
 		  #W_E.fill(eventweight,w.deltaR())
 		  
@@ -323,50 +301,16 @@ class ExtractHistos(object):
 		  
 	  self.W_n_Leptonic.fill(eventweight,nLeptonicWDecays)
 	  self.W_n_Hadronic.fill(eventweight,nHadronicWDecays)
+	   
 		  
 	  for idx,b in enumerate( Bs ):
-		  
-		  if self.runParams.useDebugOutput:
-			  print "[B#" + str(idx) + "]"
-			  allChildren = self.getAllRelevantDaughters( b, GenJets, Set())
-			  sumP4 = ROOT.Math.LorentzVector('ROOT::Math::PxPyPzE4D<double>')()
-			  
-			  print "nAllChildren: " + str(len(allChildren))
-			  
-			  for f in allChildren:
-				  sumP4 = sumP4 + f.p4()
-				  
-			  self.B_M.fill(eventweight,b.p4().M())
-			  self.B_M_Children.fill(eventweight,sumP4.M())
-				  
-			  print "b p4.pt=" + str(b.p4().pt()) + ", sum allChildren pt=" + str(sumP4.pt())
-			  print "b p4.M=" + str(b.p4().M()) + ", sum allChildren M=" + str(sumP4.M())
-			  print "b p4.e=" + str(b.p4().energy()) + ", sum allChildren e=" + str(sumP4.energy())
-			  
-		  
 		  self.B_Pt.fill(eventweight,b.pt())
+		  self.B_M.fill(eventweight,b.p4().M())
 		  self.B_E.fill(eventweight,b.energy())
 		  #B_E.fill(eventweight,b.deltaR())
 	  for idx,h in enumerate( Hs):
-		  
-		  if self.runParams.useDebugOutput:
-			  print "[H#" + str(idx) + "]"
-			  allChildren = self.getAllRelevantDaughters(h, GenJets, Set())
-			  sumP4 = ROOT.Math.LorentzVector('ROOT::Math::PxPyPzE4D<double>')()
-			  
-			  print "nAllChildren: " + str(len(allChildren))
-			  
-			  for f in allChildren:
-				  sumP4 = sumP4 + f.p4()
-				  
-			  self.H_M.fill(eventweight,h.p4().M())
-			  self.H_M_Children.fill(eventweight,sumP4.M())
-				  
-			  print "h p4.pt=" + str(h.p4().pt()) + ", sum allChildren pt=" + str(sumP4.pt())
-			  print "h p4.M=" + str(h.p4().M()) + ", sum allChildren M=" + str(sumP4.M())
-			  print "h p4.e=" + str(h.p4().energy()) + ", sum allChildren e=" + str(sumP4.energy())
-								  
 		  self.H_Pt.fill(eventweight,h.pt())
+		  self.H_M.fill(eventweight,h.p4().M())
 		  self.H_E.fill(eventweight,h.energy())
 		  #H_E.fill(eventweight,h.deltaR())
 	  
@@ -402,15 +346,10 @@ class ExtractHistos(object):
 		
 		self.W_n_Leptonic.write()
 		self.W_n_Hadronic.write()
-		
-		if self.runParams.useDebugOutput:
-			self.W_M.write()
-			self.W_M_Children.write()
-			self.B_M.write()
-			self.B_M_Children.write()
-			self.H_M.write()
-			self.H_M_Children.write()
-		
+		self.W_M.write()
+		self.B_M.write()
+		self.H_M.write()
+				
 		self.W_Leptonic_Pt.write()
 		self.W_Leptonic_E.write()
 		self.W_Hadronic_Pt.write()
@@ -448,6 +387,8 @@ class ExtractHistos(object):
 		totalEventCount = 0
 		Break = False
 		
+		startTime = time.time()
+		
 		for currentCutIndex, currentCut in enumerate(runParams.pTCuts):
 			self.currentCut = currentCut
 			if Break:
@@ -455,7 +396,7 @@ class ExtractHistos(object):
 			
 			self.createHistograms()
 			
-			print 'Processing ' + str(self.events.size()) + ' self.events @ pTCut='+self.currentCutString+'GeV'
+			print 'Processing ' + str(self.events.size()) + ' events @ pTCut='+self.currentCutString+'GeV'
 			self.enumber = 0
 			if not runParams.useDebugOutput:
 				sys.stdout.write("[                                                  ]\r[")
@@ -482,8 +423,17 @@ class ExtractHistos(object):
 						sys.stdout.flush()
 				
 				self.processEvent()
+				
+			endTime = time.time()
+			totalTime = endTime - startTime
+			
+			
 			
 			self.finalize()
+		
+		print "%i events in %.2fs (%.2f events/sec)" % (totalEventCount, totalTime, totalEventCount/totalTime)
+			
+		
 
 if __name__ == '__main__':
 	try:
