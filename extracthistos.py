@@ -12,6 +12,8 @@ from ROOT import TH1F, TFile, TTree, TString, gSystem
 from sets import Set
 import time
 
+from collections import namedtuple
+
 # sibling modules
 import visual
 from particles import *
@@ -22,20 +24,23 @@ from histogram import *
 
 IsInitialized = False
 
-class ExtractHistos(object):
+def InitializeFWLite():
+	
+	global IsInitialized
+	
+	if IsInitialized:
+		return
+	
+	cmsswbase = TString.getenv("CMSSW_BASE")	
+	print 'Loading FW Lite setup.\n'
+	gSystem.Load("libFWCoreFWLite.so")
+	ROOT.AutoLibraryLoader.enable()
+	gSystem.Load("libDataFormatsFWLite.so")
+	gSystem.Load("libDataFormatsPatCandidates.so")
+	
+	IsInitialized = True
 
-	def initialize(self):
-		#-------------------------------------------------#
-		#First use FW Lite from CMSSW
-		#-------------------- FW Lite --------------------#
-		cmsswbase = TString.getenv("CMSSW_BASE")
-		
-		print 'Loading FW Lite setup.\n'
-		gSystem.Load("libFWCoreFWLite.so")
-		ROOT.AutoLibraryLoader.enable()
-		gSystem.Load("libDataFormatsFWLite.so")
-		gSystem.Load("libDataFormatsPatCandidates.so")
-		#-------------------------------------------------#
+class ExtractHistos(object):
 		
 	def getAllRelevantDaughters(self, referenceParticle, referenceJets, currentList):
 		numberOfDaughters = referenceParticle.numberOfDaughters()
@@ -71,7 +76,6 @@ class ExtractHistos(object):
 			return 11 <= absPdgId <= 18, cParticle
 			
 		raise Exception("Invalid W Daughters in decay Search")
-
 		
 	def findSpecialHardParticles(self, referenceParticle, Ws = [], Bs = [], Hs = [], hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
 		if referenceParticle is not None:
@@ -106,89 +110,78 @@ class ExtractHistos(object):
 				self.findSpecialHardParticles(cParticle,Ws,Bs,Hs,hasSeenT or thisIsTop, hasSeenW or thisIsW , hasSeenB or thisIsB ,hasSeenH or thisIsH )
 		return Ws, Bs, Hs 
 		
-	def createHistograms(self):
-		self.events = Events (self.runParams.inputFileList)
+	def createHistograms(self, currentCutString):
+		self.njets = Histogram (self.outputFileObject, "HnJets"+currentCutString, "Number of Jets "+currentCutString, 15, -0.5, 14.5)
+		self.pt = Histogram(self.outputFileObject, "Hpt"+currentCutString,"Gen-Jet pt "+currentCutString,100,0,300)
 		
-		self.currentCutString = str(self.currentCut) #variable for names of histograms
-		#Definition of the Histogram
-		#Jet Histogram
-		self.njets = Histogram (self.outputFileObject, "HnJets"+self.currentCutString, "Number of Jets "+self.currentCutString, 15, -0.5, 14.5)
-		self.pt = Histogram(self.outputFileObject, "Hpt"+self.currentCutString,"Gen-Jet pt "+self.currentCutString,100,0,300)
+		self.W_Pt = Histogram(self.outputFileObject, "HWpt"+currentCutString,"W-Boson pT "+currentCutString,100,0,300)
+		self.B_Pt = Histogram(self.outputFileObject, "HBpt"+currentCutString,"B-Quark pT "+currentCutString,100,0,300)
+		self.H_Pt = Histogram(self.outputFileObject, "HHpt"+currentCutString,"Higgs pT "+currentCutString,100,0,300)
+		self.W_E = Histogram(self.outputFileObject, "HWE"+currentCutString,"W-Boson Energy "+currentCutString,100,0,300)
+		self.B_E = Histogram(self.outputFileObject, "HBE"+currentCutString,"B-Quark Energy "+currentCutString,100,0,300)
+		self.H_E = Histogram(self.outputFileObject, "HHE"+currentCutString,"Higgs Energy "+currentCutString,100,0,300)
+		self.W_deltaR = Histogram(self.outputFileObject, "HWdeltaR"+currentCutString,"W-Boson deltaR "+currentCutString,100,0,300)
+		self.B_deltaR = Histogram(self.outputFileObject, "HBdeltaR"+currentCutString,"B-Quark deltaR "+currentCutString,100,0,300)
+		self.H_deltaR = Histogram(self.outputFileObject, "HHdeltaR"+currentCutString,"Higgs deltaR "+currentCutString,100,0,300)
 		
-		self.W_Pt = Histogram(self.outputFileObject, "HWpt"+self.currentCutString,"W-Boson pT "+self.currentCutString,100,0,300)
-		self.B_Pt = Histogram(self.outputFileObject, "HBpt"+self.currentCutString,"B-Quark pT "+self.currentCutString,100,0,300)
-		self.H_Pt = Histogram(self.outputFileObject, "HHpt"+self.currentCutString,"Higgs pT "+self.currentCutString,100,0,300)
-		self.W_E = Histogram(self.outputFileObject, "HWE"+self.currentCutString,"W-Boson Energy "+self.currentCutString,100,0,300)
-		self.B_E = Histogram(self.outputFileObject, "HBE"+self.currentCutString,"B-Quark Energy "+self.currentCutString,100,0,300)
-		self.H_E = Histogram(self.outputFileObject, "HHE"+self.currentCutString,"Higgs Energy "+self.currentCutString,100,0,300)
-		self.W_deltaR = Histogram(self.outputFileObject, "HWdeltaR"+self.currentCutString,"W-Boson deltaR "+self.currentCutString,100,0,300)
-		self.B_deltaR = Histogram(self.outputFileObject, "HBdeltaR"+self.currentCutString,"B-Quark deltaR "+self.currentCutString,100,0,300)
-		self.H_deltaR = Histogram(self.outputFileObject, "HHdeltaR"+self.currentCutString,"Higgs deltaR "+self.currentCutString,100,0,300)
+		self.W_Hadronic_Pt = Histogram(self.outputFileObject, "HWHpT"+currentCutString,"W-Boson Hadronic pT "+currentCutString,100,0,300)
+		self.W_Hadronic_E = Histogram(self.outputFileObject, "HWHE"+currentCutString,"W-Boson Hadronic Energy "+currentCutString,100,0,300)
+		self.W_Leptonic_Pt = Histogram(self.outputFileObject, "HWLpT"+currentCutString,"W-Boson Leptonic pT "+currentCutString,100,0,300)
+		self.W_Leptonic_E = Histogram(self.outputFileObject, "HWLE"+currentCutString,"W-Boson Leptonic Energy "+currentCutString,100,0,300)
 		
-		self.W_Hadronic_Pt = Histogram(self.outputFileObject, "HWHpT"+self.currentCutString,"W-Boson Hadronic pT "+self.currentCutString,100,0,300)
-		self.W_Hadronic_E = Histogram(self.outputFileObject, "HWHE"+self.currentCutString,"W-Boson Hadronic Energy "+self.currentCutString,100,0,300)
-		self.W_Leptonic_Pt = Histogram(self.outputFileObject, "HWLpT"+self.currentCutString,"W-Boson Leptonic pT "+self.currentCutString,100,0,300)
-		self.W_Leptonic_E = Histogram(self.outputFileObject, "HWLE"+self.currentCutString,"W-Boson Leptonic Energy "+self.currentCutString,100,0,300)
+		self.W_Leptonic_e_Pt = Histogram(self.outputFileObject, "HWLepT"+currentCutString,"W-Boson -> Electron pT "+currentCutString,100,0,300)
+		self.W_Leptonic_e_E = Histogram(self.outputFileObject, "HWLeE"+currentCutString,"W-Boson -> Electron Energy "+currentCutString,100,0,300)
+		self.W_Leptonic_nue_Pt = Histogram(self.outputFileObject, "HWLnuepT"+currentCutString,"W-Boson -> nu_e pT "+currentCutString,100,0,300)
+		self.W_Leptonic_nue_E = Histogram(self.outputFileObject, "HWLnueE"+currentCutString,"W-Boson -> nu_e Energy "+currentCutString,100,0,300)
 		
-		self.W_Leptonic_e_Pt = Histogram(self.outputFileObject, "HWLepT"+self.currentCutString,"W-Boson -> Electron pT "+self.currentCutString,100,0,300)
-		self.W_Leptonic_e_E = Histogram(self.outputFileObject, "HWLeE"+self.currentCutString,"W-Boson -> Electron Energy "+self.currentCutString,100,0,300)
-		self.W_Leptonic_nue_Pt = Histogram(self.outputFileObject, "HWLnuepT"+self.currentCutString,"W-Boson -> nu_e pT "+self.currentCutString,100,0,300)
-		self.W_Leptonic_nue_E = Histogram(self.outputFileObject, "HWLnueE"+self.currentCutString,"W-Boson -> nu_e Energy "+self.currentCutString,100,0,300)
+		self.W_Leptonic_mu_Pt = Histogram(self.outputFileObject, "HWLmupT"+currentCutString,"W-Boson -> Muon pT "+currentCutString,100,0,300)
+		self.W_Leptonic_mu_E = Histogram(self.outputFileObject, "HWLmuE"+currentCutString,"W-Boson -> Muon Energy "+currentCutString,100,0,300)
+		self.W_Leptonic_numu_Pt = Histogram(self.outputFileObject, "HWLnumupT"+currentCutString,"W-Boson -> nu_mu pT "+currentCutString,100,0,300)
+		self.W_Leptonic_numu_E = Histogram(self.outputFileObject, "HWLnumuE"+currentCutString,"W-Boson -> nu_mu Energy "+currentCutString,100,0,300)
 		
-		self.W_Leptonic_mu_Pt = Histogram(self.outputFileObject, "HWLmupT"+self.currentCutString,"W-Boson -> Muon pT "+self.currentCutString,100,0,300)
-		self.W_Leptonic_mu_E = Histogram(self.outputFileObject, "HWLmuE"+self.currentCutString,"W-Boson -> Muon Energy "+self.currentCutString,100,0,300)
-		self.W_Leptonic_numu_Pt = Histogram(self.outputFileObject, "HWLnumupT"+self.currentCutString,"W-Boson -> nu_mu pT "+self.currentCutString,100,0,300)
-		self.W_Leptonic_numu_E = Histogram(self.outputFileObject, "HWLnumuE"+self.currentCutString,"W-Boson -> nu_mu Energy "+self.currentCutString,100,0,300)
+		self.W_Leptonic_t_Pt = Histogram(self.outputFileObject, "HWLtpT"+currentCutString,"W-Boson -> Tauon pT "+currentCutString,100,0,300)
+		self.W_Leptonic_t_E = Histogram(self.outputFileObject, "HWLtE"+currentCutString,"W-Boson -> Tauon Energy "+currentCutString,100,0,300)
+		self.W_Leptonic_nut_Pt = Histogram(self.outputFileObject, "HWLnutpT"+currentCutString,"W-Boson -> nu_t pT "+currentCutString,100,0,300)
+		self.W_Leptonic_nut_E = Histogram(self.outputFileObject, "HWLnutE"+currentCutString,"W-Boson -> nu_t Energy "+currentCutString,100,0,300)
 		
-		self.W_Leptonic_t_Pt = Histogram(self.outputFileObject, "HWLtpT"+self.currentCutString,"W-Boson -> Tauon pT "+self.currentCutString,100,0,300)
-		self.W_Leptonic_t_E = Histogram(self.outputFileObject, "HWLtE"+self.currentCutString,"W-Boson -> Tauon Energy "+self.currentCutString,100,0,300)
-		self.W_Leptonic_nut_Pt = Histogram(self.outputFileObject, "HWLnutpT"+self.currentCutString,"W-Boson -> nu_t pT "+self.currentCutString,100,0,300)
-		self.W_Leptonic_nut_E = Histogram(self.outputFileObject, "HWLnutE"+self.currentCutString,"W-Boson -> nu_t Energy "+self.currentCutString,100,0,300)
-		
-		self.W_n_Leptonic = Histogram (self.outputFileObject, "HnWLeptonic"+self.currentCutString, "Number of Leptonic W-Decays "+self.currentCutString, 3, -0.5, 2.5)
-		self.W_n_Hadronic = Histogram (self.outputFileObject, "HnWHadronic"+self.currentCutString, "Number of Hadronic W-Decays "+self.currentCutString, 3, -0.5, 2.5)	
+		self.W_n_Leptonic = Histogram (self.outputFileObject, "HnWLeptonic"+currentCutString, "Number of Leptonic W-Decays "+currentCutString, 3, -0.5, 2.5)
+		self.W_n_Hadronic = Histogram (self.outputFileObject, "HnWHadronic"+currentCutString, "Number of Hadronic W-Decays "+currentCutString, 3, -0.5, 2.5)	
 			
-		self.W_M = Histogram(self.outputFileObject, "HWM"+self.currentCutString,"W-Boson mass "+self.currentCutString,100,0,1000)
-		self.B_M = Histogram(self.outputFileObject, "HBM"+self.currentCutString,"B-Quark mass "+self.currentCutString,100,0,1000)
-		self.H_M = Histogram(self.outputFileObject, "HHM"+self.currentCutString,"Higgs mass "+self.currentCutString,100,0,1000)
+		self.W_M = Histogram(self.outputFileObject, "HWM"+currentCutString,"W-Boson mass "+currentCutString,100,0,1000)
+		self.B_M = Histogram(self.outputFileObject, "HBM"+currentCutString,"B-Quark mass "+currentCutString,100,0,1000)
+		self.H_M = Histogram(self.outputFileObject, "HHM"+currentCutString,"Higgs mass "+currentCutString,100,0,1000)
 
-		self.phi = Histogram(self.outputFileObject, "Hphi"+self.currentCutString,"Gen-Jet Phi "+self.currentCutString,50,-pi,pi)
-		self.theta = Histogram(self.outputFileObject, "Htheta"+self.currentCutString,"Gen-Jet Theta "+self.currentCutString,50,0,pi)
-		self.energy = Histogram(self.outputFileObject, "Henergy"+self.currentCutString,"Gen-Jet Energy "+self.currentCutString,100,0,600)
-		self.firstjetpt = Histogram(self.outputFileObject, "HfirstJetpt"+self.currentCutString,"Pt of hardest Gen-Jet "+self.currentCutString, 100,0,300)
-		self.firstjeteta = Histogram(self.outputFileObject, "H1sJeteta"+self.currentCutString,"Eta of hardest Gen-Jet "+self.currentCutString,50,-5,5)
-		self.secondjetpt = Histogram(self.outputFileObject, "HsecondJetpt"+self.currentCutString,"Pt of 2nd hardest Gen-Jet "+self.currentCutString, 100,0,300)
-		self.isrjetpt = Histogram(self.outputFileObject, "Hisrjetpt"+self.currentCutString, "Pt of ISR-Jets "+self.currentCutString,100,0,300)
-		self.fsrjetpt = Histogram(self.outputFileObject, "Hfsrjetpt"+self.currentCutString, "Pt of FSR-Jets "+self.currentCutString,100,0,300)
-		self.nIsrJets = Histogram(self.outputFileObject, "HnIsrJets"+self.currentCutString,"Number of ISR Jets per Event "+self.currentCutString, 15, -0.5, 14.5)
-		self.nFsrJets = Histogram(self.outputFileObject, "HnFsrJets"+self.currentCutString,"Number of FSR Jets per Event "+self.currentCutString, 15, -0.5, 14.5)
+		self.phi = Histogram(self.outputFileObject, "Hphi"+currentCutString,"Gen-Jet Phi "+currentCutString,50,-pi,pi)
+		self.theta = Histogram(self.outputFileObject, "Htheta"+currentCutString,"Gen-Jet Theta "+currentCutString,50,0,pi)
+		self.energy = Histogram(self.outputFileObject, "Henergy"+currentCutString,"Gen-Jet Energy "+currentCutString,100,0,600)
+		self.firstjetpt = Histogram(self.outputFileObject, "HfirstJetpt"+currentCutString,"Pt of hardest Gen-Jet "+currentCutString, 100,0,300)
+		self.firstjeteta = Histogram(self.outputFileObject, "H1sJeteta"+currentCutString,"Eta of hardest Gen-Jet "+currentCutString,50,-5,5)
+		self.secondjetpt = Histogram(self.outputFileObject, "HsecondJetpt"+currentCutString,"Pt of 2nd hardest Gen-Jet "+currentCutString, 100,0,300)
+		self.isrjetpt = Histogram(self.outputFileObject, "Hisrjetpt"+currentCutString, "Pt of ISR-Jets "+currentCutString,100,0,300)
+		self.fsrjetpt = Histogram(self.outputFileObject, "Hfsrjetpt"+currentCutString, "Pt of FSR-Jets "+currentCutString,100,0,300)
+		self.nIsrJets = Histogram(self.outputFileObject, "HnIsrJets"+currentCutString,"Number of ISR Jets per Event "+currentCutString, 15, -0.5, 14.5)
+		self.nFsrJets = Histogram(self.outputFileObject, "HnFsrJets"+currentCutString,"Number of FSR Jets per Event "+currentCutString, 15, -0.5, 14.5)
 			
-		# create handle outside of loop
-		# Handle and lable are pointing at the Branch you want
-		self.handle  = Handle ('std::vector<reco::GenJet>')
-		self.label = ("ak5GenJets")
-		self.infohandle = Handle ('<GenEventInfoProduct>')
-		
-	def processEvent(self):
-	  self.currentEvent.getByLabel (self.label, self.handle)
-	  GenJets = self.handle.product()
-	  self.currentEvent.getByLabel ("generator", self.infohandle)
-	  Infos = self.infohandle.product()
+	def processEvent(self,genJets, currentCut, currentEventIndex, currentEvent):
+	  currentEventHandle = None
+	  currentEvent.getByLabel (genJets.label, currentEventHandle)
+	  genJetsProduct = currentEventHandle.product()
+	  currentEvent.getByLabel ("generator", infoHandle)
+	  eventweight = infoHandle.product().weight()
 	  nJets = 0
 	  firstJetpt = 0
 	  secondJetpt = 0
 	  firstJeteta = 0
 	  nISRJets = 0
 	  nFSRJets = 0
-	  eventweight = Infos.weight()
 		  
 	  isrJets = []
 	  fsrJets = []
 	  referenceParticle = None
 		  
-	  for currentJetIndex, currentJet in enumerate(GenJets):
+	  for currentJetIndex, currentJet in enumerate(genJetsProduct):
 		  
-		  if currentJet.pt() >= self.currentCut and abs(currentJet.eta()) <= self.runParams.etaCut:
+		  if currentJet.pt() >= currentCut and abs(currentJet.eta()) <= self.runParams.etaCut:
 			  nJets = nJets + 1
 			  self.pt.fill(eventweight,currentJet.pt())
 			  self.phi.fill(eventweight,currentJet.phi())
@@ -242,7 +235,6 @@ class ExtractHistos(object):
 				  firstJeteta = currentJet.eta()
 			  elif currentJet.pt() >= secondJetpt and currentJet.pt() <= firstJetpt:
 				  secondJetpt = currentJet.pt()
-				  self.enumber=self.enumber+1
 			  self.firstjetpt.fill(eventweight,firstJetpt)
 			  self.secondjetpt.fill(eventweight,secondJetpt)
 			  self.firstjeteta.fill(eventweight,firstJeteta)
@@ -317,7 +309,7 @@ class ExtractHistos(object):
 	  #print "Found: " + str(len(Ws)) + " Ws and " + str(len(Bs)) + " Bs and " + str(len(Hs)) + " Hs." 
 			  
 	  if self.runParams.useVisualization:
-		  fileName = "cut" + self.currentCutString + "_event" + str(self.currentEventIndex);
+		  fileName = "cut" + currentCutString + "_event" + str(currentEventIndex);
 		  visual.GraphViz(fileName, referenceParticle, isrJets, fsrJets, Ws, Bs, Hs)
 			  
 	  self.njets.fill(eventweight,nJets)
@@ -368,44 +360,36 @@ class ExtractHistos(object):
 		self.W_Leptonic_nut_Pt.write()
 		self.W_Leptonic_nut_E.write()
 		
-		#delete all variables, that are used again in the next loop
-		del self.handle
-		del self.label
-		del self.infohandle
-		del self.events
-		sys.stdout.write('.\n')
-		sys.stdout.flush()
-		
 	def run(self, runParams):
 		self.runParams = runParams
-		global IsInitialized
-		if not IsInitialized:
-			self.initialize()
-			IsInitialized = True
-			
+		InitializeFWLite()			
 		self.outputFileObject = TFile(runParams.outputFile,"RECREATE")
 		totalEventCount = 0
 		Break = False
 		
 		startTime = time.time()
 		
+		events = Events (self.runParams.inputFileList)
+		
+		genJets = namedtuple('Handle', ['handle', 'label'])
+		genJets.handle = Handle ('std::vector<reco::GenJet>')
+		genJets.label="ak5GenJets"
+		
 		for currentCutIndex, currentCut in enumerate(runParams.pTCuts):
-			self.currentCut = currentCut
 			if Break:
 				break
 			
-			self.createHistograms()
+			self.createHistograms(str(currentCut))
 			
-			print 'Processing ' + str(self.events.size()) + ' events @ pTCut='+self.currentCutString+'GeV'
-			self.enumber = 0
+			print 'Processing ' + str(events.size()) + ' events @ pTCut='+str(currentCut)+'GeV'
 			if not runParams.useDebugOutput:
 				sys.stdout.write("[                                                  ]\r[")
 				sys.stdout.flush()
 			percentage50 = 0 
-			for self.currentEventIndex, self.currentEvent in enumerate(self.events):
+			for currentEventIndex, currentEvent in enumerate(events):
 			
 				if len(runParams.events) > 0:
-					if self.currentEventIndex not in runParams.events:
+					if currentEventIndex not in runParams.events:
 						continue
 			
 				totalEventCount = totalEventCount + 1
@@ -414,26 +398,22 @@ class ExtractHistos(object):
 					break
 			
 				if runParams.useDebugOutput:
-					print "Event #" + str(self.currentEventIndex)
+					print "Event #" + str(currentEventIndex)
 				else:
-					percentageNow = 50. * self.currentEventIndex / self.events.size()
+					percentageNow = 50. * currentEventIndex / events.size()
 					if percentageNow >= percentage50+1:
 						percentage50 = percentage50 + 1 
 						sys.stdout.write('.')
 						sys.stdout.flush()
-				
-				self.processEvent()
+							
+				self.processEvent( genJets, currentCut, currentEventIndex, currentEvent )
 				
 			endTime = time.time()
 			totalTime = endTime - startTime
-			
-			
-			
 			self.finalize()
 		
 		print "%i events in %.2fs (%.2f events/sec)" % (totalEventCount, totalTime, totalEventCount/totalTime)
 			
-		
 
 if __name__ == '__main__':
 	try:
