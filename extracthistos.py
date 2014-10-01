@@ -231,13 +231,13 @@ class ExtractHistos(object):
 		
 		self.plotGenJets(histos,currentCut,eventweight,genJetsProduct)
 		referenceParticle = None # todo
-		self.findAndPlotSpecialHardParticles(histos,eventweight,referenceParticle)
+		specialParticles = self.findAndPlotSpecialHardParticles(histos,eventweight,referenceParticle)
 	
 		if self.runParams.useVisualization:
 			fileName = "cut" + str(currentCut) + "_event" + str(currentEventIndex) + "_p0";
-			visual.GraphViz(fileName, motherParticles[0], [], [], [], [], [])
+			visual.GraphViz(fileName, motherParticles[0], [], [], specialParticles)
 			fileName = "cut" + str(currentCut) + "_event" + str(currentEventIndex) + "_p1";
-			visual.GraphViz(fileName, motherParticles[1], [], [], [], [], [])
+			visual.GraphViz(fileName, motherParticles[1], [], [], specialParticles)
 	
 	def run(self, runParams):
 		self.runParams = runParams

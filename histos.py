@@ -15,9 +15,9 @@ class Histos(object):
 		self.W_E = Histogram(outputFileObject, "HWE"+currentCutString,"W-Boson Energy "+currentCutString,100,0,300)
 		self.B_E = Histogram(outputFileObject, "HBE"+currentCutString,"B-Quark Energy "+currentCutString,100,0,300)
 		self.H_E = Histogram(outputFileObject, "HHE"+currentCutString,"Higgs Energy "+currentCutString,100,0,300)
-		self.W_deltaR = Histogram(outputFileObject, "HWdeltaR"+currentCutString,"W-Boson deltaR "+currentCutString,100,0,300)
-		self.B_deltaR = Histogram(outputFileObject, "HBdeltaR"+currentCutString,"B-Quark deltaR "+currentCutString,100,0,300)
-		self.H_deltaR = Histogram(outputFileObject, "HHdeltaR"+currentCutString,"Higgs deltaR "+currentCutString,100,0,300)
+		#self.W_deltaR = Histogram(outputFileObject, "HWdeltaR"+currentCutString,"W-Boson deltaR "+currentCutString,100,0,300)
+		#self.B_deltaR = Histogram(outputFileObject, "HBdeltaR"+currentCutString,"B-Quark deltaR "+currentCutString,100,0,300)
+		#self.H_deltaR = Histogram(outputFileObject, "HHdeltaR"+currentCutString,"Higgs deltaR "+currentCutString,100,0,300)
 		
 		self.W_Hadronic_Pt = Histogram(outputFileObject, "HWHpT"+currentCutString,"W-Boson Hadronic pT "+currentCutString,100,0,300)
 		self.W_Hadronic_E = Histogram(outputFileObject, "HWHE"+currentCutString,"W-Boson Hadronic Energy "+currentCutString,100,0,300)
@@ -58,36 +58,21 @@ class Histos(object):
 		self.nFsrJets = Histogram(outputFileObject, "HnFsrJets"+currentCutString,"Number of FSR Jets per Event "+currentCutString, 15, -0.5, 14.5)
 			
 	def finalize (self):
-		self.pt.finalize()
-		self.phi.finalize()
-		self.theta.finalize()
-		self.energy.finalize()
-		self.firstjetpt.finalize()
-		self.secondjetpt.finalize()
-		self.firstjeteta.finalize()
 		self.njets.finalize()
-		self.isrjetpt.finalize()
-		self.fsrjetpt.finalize()
-		self.nIsrJets.finalize()
-		self.nFsrJets.finalize()
+		self.pt.finalize()
+		
 		self.W_Pt.finalize()
 		self.W_E.finalize()
 		self.B_Pt.finalize()
 		self.B_E.finalize()
 		self.H_Pt.finalize()
 		self.H_E.finalize()
-		
-		self.W_n_Leptonic.finalize()
-		self.W_n_Hadronic.finalize()
-		self.W_M.finalize()
-		self.B_M.finalize()
-		self.H_M.finalize()
-				
-		self.W_Leptonic_Pt.finalize()
-		self.W_Leptonic_E.finalize()
+
 		self.W_Hadronic_Pt.finalize()
 		self.W_Hadronic_E.finalize()
-		
+		self.W_Leptonic_Pt.finalize()
+		self.W_Leptonic_E.finalize()
+
 		self.W_Leptonic_e_Pt.finalize()
 		self.W_Leptonic_e_E.finalize()
 		self.W_Leptonic_nue_Pt.finalize()
@@ -100,5 +85,24 @@ class Histos(object):
 		self.W_Leptonic_t_E.finalize()
 		self.W_Leptonic_nut_Pt.finalize()
 		self.W_Leptonic_nut_E.finalize()
+		
+		self.W_n_Leptonic.finalize()
+		self.W_n_Hadronic.finalize()
+
+		self.W_M.finalize()
+		self.B_M.finalize()
+		self.H_M.finalize()
+		
+		self.phi.finalize()
+		self.theta.finalize()
+		self.energy.finalize()
+		self.firstjetpt.finalize()
+		self.secondjetpt.finalize()
+		self.firstjeteta.finalize()
+		
+		self.isrjetpt.finalize()
+		self.fsrjetpt.finalize()
+		self.nIsrJets.finalize()
+		self.nFsrJets.finalize()
 		
 		del self

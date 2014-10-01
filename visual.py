@@ -9,7 +9,7 @@ import threading
 # Visualization
 # 
 
-def GraphViz(fileName, MainConstituent,  isr_jets, fsr_jets, Ws, Bs, Hs):
+def GraphViz(fileName, MainConstituent,  isr_jets, fsr_jets, specialParticles):
 	if MainConstituent is None:
 		print "Warning in " + fileName + ": MainConstituent is None."
 		return 
@@ -20,7 +20,7 @@ def GraphViz(fileName, MainConstituent,  isr_jets, fsr_jets, Ws, Bs, Hs):
 	f.write("digraph G {\n")
 	f.write("graph [nodesep=0.01]\n") 
 	
-	RecurseParticle(f, MainConstituent, 0, "", 0,  isr_jets, fsr_jets, Ws, Bs, Hs)
+	RecurseParticle(f, MainConstituent, 0, "", 0,  isr_jets, fsr_jets, specialParticles)
 	
 	f.write("}\n")
 	f.close()
@@ -50,7 +50,7 @@ def CreateColorFromParams(jetType,numJet):
 	else:
 		raise Exception("unknown jet type: '" + jetType + "'")
 	
-def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets, Ws, Bs, Hs, isWDaughter=False, isBDaughter=False, isHDaughter=False):
+def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets, specialParticles, isWDaughter=False, isBDaughter=False, isHDaughter=False):
 	
 	particleName = GetParticleName( p.pdgId() )
 	cs = abs(p.status())
@@ -87,7 +87,7 @@ def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets, Ws, Bs, Hs, isWD
 	#elif 71 <= cs <= 79:
 		#fillColorString="gray"
 		#styleString = ", style=filled"
-	
+	#Ws, Bs, Hs
 	particleQualifier = last + "H" + str(rec) + "I" + str(index)
 	particleLabel = particleName
 	particleLabelFinal = particleLabel + "[" + typeString + "]"
@@ -153,4 +153,4 @@ def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets, Ws, Bs, Hs, isWD
 		f.write(last + " -> " + particleQualifier + ";\n")
 	n = p.numberOfDaughters();
 	for i in range(0,n):
-		RecurseParticle(f, p.daughter(i), rec + 1, particleQualifier, i,  isr_jets, fsr_jets, Ws, Bs, Hs, isWDaughter, isBDaughter, isHDaughter)
+		RecurseParticle(f, p.daughter(i), rec + 1, particleQualifier, i,  isr_jets, fsr_jets, specialParticles, isWDaughter, isBDaughter, isHDaughter)
