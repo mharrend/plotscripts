@@ -17,7 +17,7 @@ class Histogram(object):
         elif weight < 0:
             self.neg.Fill(value,-1.)
             self.combined.Fill(value,-1.)
-    def write(self):
+    def finalize(self):
         self.outputFile.WriteTObject(self.pos)
         self.outputFile.WriteTObject(self.neg)
         self.outputFile.WriteTObject(self.combined)
