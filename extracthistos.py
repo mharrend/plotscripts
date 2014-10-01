@@ -104,6 +104,8 @@ class ExtractHistos(object):
 		histos.njets.fill(eventweight,nJets)
 		histos.nIsrJets.fill(eventweight,min(15,nISRJets))
 		histos.nFsrJets.fill(eventweight,min(15,nFSRJets))
+		
+		
 	def findSpecialHardParticles(self, referenceParticle, Ws = [], Bs = [], Hs = [], hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
 		if referenceParticle is not None:
 			numberOfDaughters = referenceParticle.numberOfDaughters()
@@ -204,6 +206,18 @@ class ExtractHistos(object):
 			#H_E.fill(eventweight,h.deltaR())
 		
 
+	def findMotherParticles(self, genParticlesProduct):
+		
+		return genParticlesProduct[0], genParticlesProduct[1]
+		
+		#print "total Particles: " + str(genParticlesProduct.size())
+		
+		#particleMap = Map()
+		
+		#for currentParticleIndex, currentParticle in enumerate(genParticlesProduct):
+			#pdgId = currentParticle.pdgId()
+			#status = currentParticle.status()
+			#print "particle #" + str(currentParticleIndex) + ": " + GetParticleName(pdgId) + "[" + str(status) + "]"
 
 	def processEvent(self,infoObj, genJetsObj, genParticlesObj, currentCut, currentEventIndex, currentEvent, histos):
 		currentEvent.getByLabel (genJetsObj.label, genJetsObj.handle)
@@ -213,13 +227,17 @@ class ExtractHistos(object):
 		currentEvent.getByLabel (genParticlesObj.label, genParticlesObj.handle)
 		genParticlesProduct = genParticlesObj.handle.product()
 		
+		motherParticles = self.findMotherParticles(genParticlesProduct)
+		
 		self.plotGenJets(histos,currentCut,eventweight,genJetsProduct)
-		referenceParticle = None # TODO: By GenParticles
+		referenceParticle = None # todo
 		self.findAndPlotSpecialHardParticles(histos,eventweight,referenceParticle)
 	
 		if self.runParams.useVisualization:
-			fileName = "cut" + currentCutString + "_event" + str(currentEventIndex);
-			visual.GraphViz(fileName, referenceParticle, isrJets, fsrJets, Ws, Bs, Hs)
+			fileName = "cut" + str(currentCut) + "_event" + str(currentEventIndex) + "_p0";
+			visual.GraphViz(fileName, motherParticles[0], [], [], [], [], [])
+			fileName = "cut" + str(currentCut) + "_event" + str(currentEventIndex) + "_p1";
+			visual.GraphViz(fileName, motherParticles[1], [], [], [], [], [])
 	
 	def run(self, runParams):
 		self.runParams = runParams
