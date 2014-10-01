@@ -52,6 +52,9 @@ def CreateColorFromParams(jetType,numJet):
 	
 def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets, specialParticles, isWDaughter=False, isBDaughter=False, isHDaughter=False):
 	
+	#if p.p4().energy() < 20:
+	#	return
+	
 	particleName = GetParticleName( p.pdgId() )
 	cs = abs(p.status())
 	
@@ -88,7 +91,7 @@ def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets, specialParticles
 		#fillColorString="gray"
 		#styleString = ", style=filled"
 	#Ws, Bs, Hs
-	particleQualifier = last + "H" + str(rec) + "I" + str(index)
+	particleIdentifier = "P" + (str(p)[36:][:8])
 	particleLabel = particleName
 	particleLabelFinal = particleLabel + "[" + typeString + "]"
 
@@ -147,10 +150,17 @@ def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets, specialParticles
 						styleString = ", style=filled"
 	
 	attrib = styleString + ", color=" + colorString + ", fillcolor=" + fillColorString + ", fontcolor=" + textColorString
-	
-	f.write(particleQualifier + "[label=\"" + particleLabelFinal + "\"" + attrib + "];\n")
+		
+	f.write(particleIdentifier + "[label=\"" + particleLabelFinal + "\"" + attrib + "];\n")
 	if last <> "":
-		f.write(last + " -> " + particleQualifier + ";\n")
+		f.write(last + " -> " + particleIdentifier + ";\n")
+		
+	n = p.numberOfMothers();
+	if n>1:
+		print GetParticleName(p.pdgId()) + "[" + str(p.status()) + "] has " + str(n) + " mothers."
+		for i in range(0,n):
+			print GetParticleName(p.mother(i).pdgId()) + " [" + str(p.mother(i).status()) + "]"
+			
 	n = p.numberOfDaughters();
 	for i in range(0,n):
-		RecurseParticle(f, p.daughter(i), rec + 1, particleQualifier, i,  isr_jets, fsr_jets, specialParticles, isWDaughter, isBDaughter, isHDaughter)
+		RecurseParticle(f, p.daughter(i), rec + 1, particleIdentifier, i,  isr_jets, fsr_jets, specialParticles, isWDaughter, isBDaughter, isHDaughter)
