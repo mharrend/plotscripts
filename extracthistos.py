@@ -83,14 +83,7 @@ class ExtractHistos(object):
 		nISRJets = 0
 		nFSRJets = 0
 			
-		isrJets = []
-		fsrJets = []
-		referenceParticle = None
-			
 		for currentJetIndex, currentJet in enumerate(genJetsProduct):
-			
-			
-			referenceParticle = None
 			
 			if currentJet.pt() >= currentCut and abs(currentJet.eta()) <= self.runParams.etaCut:
 				nJets = nJets + 1
@@ -145,13 +138,10 @@ class ExtractHistos(object):
 		return Ws, Bs, Hs 
 		
 	def findAndPlotSpecialHardParticles(self,histos, eventweight, referenceParticle):
-			  
 		Ws = []
 		Bs = []
 		Hs = []
-				
 		Ws, Bs, Hs = self.findSpecialHardParticles(referenceParticle, Ws, Bs, Hs)
-		
 		nLeptonicWDecays = 0
 		nHadronicWDecays = 0
 		
@@ -213,23 +203,27 @@ class ExtractHistos(object):
 			histos.H_E.fill(eventweight,h.energy())
 			#H_E.fill(eventweight,h.deltaR())
 		
-	def processEvent(self,infoObj, genJetsObj, currentCut, currentEventIndex, currentEvent, histos):
+
+
+	def processEvent(self,infoObj, genJetsObj, genParticlesObj, currentCut, currentEventIndex, currentEvent, histos):
 		currentEvent.getByLabel (genJetsObj.label, genJetsObj.handle)
 		genJetsProduct = genJetsObj.handle.product()
 		currentEvent.getByLabel (infoObj.label, infoObj.handle)
 		eventweight = infoObj.handle.product().weight()
+		currentEvent.getByLabel (genParticlesObj.label, genParticlesObj.handle)
+		genParticlesProduct = genParticlesObj.handle.product()
 		
-		self.plotGenJets(histos,currentCut,eventweight,genJetsProduct)  
+		self.plotGenJets(histos,currentCut,eventweight,genJetsProduct)
 		referenceParticle = None # TODO: By GenParticles
 		self.findAndPlotSpecialHardParticles(histos,eventweight,referenceParticle)
-				
+	
 		if self.runParams.useVisualization:
 			fileName = "cut" + currentCutString + "_event" + str(currentEventIndex);
 			visual.GraphViz(fileName, referenceParticle, isrJets, fsrJets, Ws, Bs, Hs)
-				
+	
 	def run(self, runParams):
 		self.runParams = runParams
-		InitializeFWLite()		
+		InitializeFWLite()
 		outputFileObject = TFile(runParams.outputFile,"RECREATE")
 		totalEventCount = 0
 		Break = False
@@ -251,6 +245,10 @@ class ExtractHistos(object):
 			infoObj = namedtuple('Obj', ['handle', 'label'])
 			infoObj.handle = Handle ('<GenEventInfoProduct>')
 			infoObj.label="generator"
+			
+			genParticlesObj = namedtuple('Obj', ['handle', 'label'])
+			genParticlesObj.handle = Handle ('std::vector<reco::GenParticle>')
+			genParticlesObj.label="genParticles"
 			
 			print 'Processing ' + str(events.size()) + ' events @ pTCut='+str(currentCut)+'GeV'
 			if not runParams.useDebugOutput:
@@ -277,7 +275,7 @@ class ExtractHistos(object):
 						sys.stdout.write('.')
 						sys.stdout.flush()
 							
-				self.processEvent( infoObj, genJetsObj, currentCut, currentEventIndex, currentEvent, histos )
+				self.processEvent( infoObj, genJetsObj, genParticlesObj, currentCut, currentEventIndex, currentEvent, histos )
 				
 			endTime = time.time()
 			totalTime = endTime - startTime
