@@ -36,16 +36,18 @@ class ArgParser(object):
 	    print "extracthistos inputFile.root /intputDir/*.root -v -o outputfile-extracted.root -p 20,30,50,100 -e 2.5 -l 100"
 	    print ""
 	    print "[switches]"
-	    print "--debug     | -d:  Show debug information"
-	    print "--etacut    | -e:  Set etaCut (double)"
-	    print "--force     | -f:  Force overwriting of output file"
-	    print "--info      | -i:  Shows this info"
-	    print "--limit     | -l:  Limit maximum # of events processed"
-	    print "--output    | -o:  Set output file (string)"
-	    print "--ptcuts    | -p:  Set pTcuts (list of doubles seperated by ',')"
-	    print "--visualize | -v:  Create visualizations saved as ptCut#_event#.png"
-	    #print "--zero-jets | -z:  Enable zero additional jets mode"
-	    print "--events    | -#:  Specify certain events (list of ints seperated by ',')"
+	    print " -d   | --debug:                          Show debug information"
+	    print " -e   | --etacut:                         Set etaCut (double)"
+	    print " -f   | --force:                          Force overwriting of output file"
+	    print " -i   | --info:                           Shows this info"
+	    print " -l   | --limit:                          Limit maximum # of events processed"
+	    print " -o   | --output:                         Set output file (string)"
+	    print " -p   | --ptcuts:                         Set pTcuts (list of doubles seperated by ',')"
+	    print " -v   | --visualize:                      Create visualization(s)"
+	    print " -vnu | --visualize-no-underlying-event:  Do not visualize the underlying event"
+	    print " -vni | --visualize-no-main-interaction:  Do not visualize the main interaction"
+	    print " -ve  | --visualize-energy-cutoff:        Specify Visualization energy cutoff (double)"
+	    print " -#   | --events:                         Specify events to processed (list of ints seperated by ',')"
 	    print ""
 	    
     def __init__(self, args):
@@ -111,6 +113,22 @@ class ArgParser(object):
 		if ( arg == "-v" ) or ( arg == "--visualize" )  :
 		    self.runParams.useVisualization = True
 		    continue
+		
+		if ( arg == "-vnu" ) or ( arg == "--visualize-no-underlying-event" )  :
+		    self.runParams.visualizationShowUnderlyingEvent = False
+		    continue
+		
+		if ( arg == "-vni" ) or ( arg == "--visualize-no-main-interaction" )  :
+		    self.runParams.visualizationShowMainInteraction = False
+		    continue
+		
+		if ( arg == "-ve" ) or ( arg == "--visualize-energy-cutoff" )  :
+		    if nextArg is None or nextArg[0] == '-':
+			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
+		    self.runParams.visualizationEnergyCutoff = int(nextArg)
+		    skip = True
+		    continue
+		
 		#if ( arg == "-z" ) or ( arg == "--zero-jets" )  :
 		    #self.runParams.zeroAdditionalJets = True
 		    #continue

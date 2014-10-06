@@ -4,13 +4,14 @@ from subprocess import call
 
 import thread
 import threading
+import runparams
 
 #
 # Visualization
 # 
 
-def GraphViz(fileName, MainConstituent,  isr_jets, fsr_jets, specialParticles):
-	if MainConstituent is None:
+def GraphViz(fileName, referenceParticles,  runParams, isr_jets, fsr_jets, specialParticles):
+	if referenceParticles is None:
 		print "Warning in " + fileName + ": MainConstituent is None."
 		return 
 	diFileName = fileName + ".di"
@@ -20,7 +21,8 @@ def GraphViz(fileName, MainConstituent,  isr_jets, fsr_jets, specialParticles):
 	f.write("digraph G {\n")
 	f.write("graph [nodesep=0.01]\n") 
 	
-	RecurseParticle(f, MainConstituent, 0, "", 0,  isr_jets, fsr_jets, specialParticles)
+	RecurseParticle(f, referenceParticles[0], 0, "", 0,  runParams, isr_jets, fsr_jets, specialParticles)
+	RecurseParticle(f, referenceParticles[1], 0, "", 0,  runParams, isr_jets, fsr_jets, specialParticles)
 	
 	f.write("}\n")
 	f.close()
@@ -50,10 +52,10 @@ def CreateColorFromParams(jetType,numJet):
 	else:
 		raise Exception("unknown jet type: '" + jetType + "'")
 	
-def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets, specialParticles, isWDaughter=False, isBDaughter=False, isHDaughter=False):
+def RecurseParticle(f, p, rec, last, index, runParams, isr_jets, fsr_jets, specialParticles, isWDaughter=False, isBDaughter=False, isHDaughter=False):
 	
-	#if p.p4().energy() < 20:
-	#	return
+	if p.p4().energy() < runParams.visualizationEnergyCutoff:
+		return
 	
 	particleName = GetParticleName( p.pdgId() )
 	cs = abs(p.status())
@@ -91,11 +93,11 @@ def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets, specialParticles
 		#fillColorString="gray"
 		#styleString = ", style=filled"
 	#Ws, Bs, Hs
-	particleIdentifier = "P" + (str(p)[36:][:8])
+	index = str(p).find('0x')
+	particleIdentifier = "P" + (str(p)[index+2:][:8])
 	particleLabel = particleName
 	particleLabelFinal = particleLabel + "[" + typeString + "]"
 
-			
 	if True:#isWDaughter or isBDaughter or isHDaughter :
 		#colorString = "black"
 		#textColorString = "black"
@@ -163,4 +165,4 @@ def RecurseParticle(f, p, rec, last, index, isr_jets, fsr_jets, specialParticles
 			
 	n = p.numberOfDaughters();
 	for i in range(0,n):
-		RecurseParticle(f, p.daughter(i), rec + 1, particleIdentifier, i,  isr_jets, fsr_jets, specialParticles, isWDaughter, isBDaughter, isHDaughter)
+		RecurseParticle(f, p.daughter(i), rec + 1, particleIdentifier, i, runParams, isr_jets, fsr_jets, specialParticles, isWDaughter, isBDaughter, isHDaughter)

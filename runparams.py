@@ -4,6 +4,9 @@ class RunParams(object):
 		self.inputFileList = []
 		self.outputFile = "output-extracted.root"
 		self.useVisualization = False
+		self.visualizationEnergyCutoff = -1
+		self.visualizationShowUnderlyingEvent = True
+		self.visualizationShowMainInteraction = True
 		self.maxEvents = -1
 		self.useDebugOutput = False
 		self.etaCut = 2.5

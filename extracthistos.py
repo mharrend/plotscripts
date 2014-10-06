@@ -234,10 +234,8 @@ class ExtractHistos(object):
 		specialParticles = self.findAndPlotSpecialHardParticles(histos,eventweight,referenceParticle)
 	
 		if self.runParams.useVisualization:
-			fileName = "cut" + str(currentCut) + "_event" + str(currentEventIndex) + "_p0";
-			visual.GraphViz(fileName, motherParticles[0], [], [], specialParticles)
-			fileName = "cut" + str(currentCut) + "_event" + str(currentEventIndex) + "_p1";
-			visual.GraphViz(fileName, motherParticles[1], [], [], specialParticles)
+			fileName = "cut" + str(currentCut) + "_event" + str(currentEventIndex);
+			visual.GraphViz(fileName, motherParticles, self.runParams, [], [], specialParticles)
 	
 	def run(self, runParams):
 		self.runParams = runParams
