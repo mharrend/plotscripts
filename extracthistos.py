@@ -204,6 +204,12 @@ class ExtractHistos(object):
 			histos.H_M.fill(eventweight,h.p4().M())
 			histos.H_E.fill(eventweight,h.energy())
 			#H_E.fill(eventweight,h.deltaR())
+			
+		specialParticles = namedtuple('specialParticles','Ws Bs Hs')
+		specialParticles.Ws = Ws
+		specialParticles.Bs = Bs
+		specialParticles.Hs = Hs
+		return specialParticles
 		
 
 	def findMotherParticles(self, genParticlesProduct):
@@ -230,12 +236,11 @@ class ExtractHistos(object):
 		motherParticles = self.findMotherParticles(genParticlesProduct)
 		
 		self.plotGenJets(histos,currentCut,eventweight,genJetsProduct)
-		referenceParticle = None # todo
-		specialParticles = self.findAndPlotSpecialHardParticles(histos,eventweight,referenceParticle)
-	
+		specialParticles = self.findAndPlotSpecialHardParticles(histos,eventweight,motherParticles[0])
+		
 		if self.runParams.useVisualization:
 			fileName = "cut" + str(currentCut) + "_event" + str(currentEventIndex);
-			visual.GraphViz(fileName, motherParticles, self.runParams, [], [], specialParticles)
+			visual.GraphViz(fileName, motherParticles, self.runParams, ([], []), specialParticles)
 	
 	def run(self, runParams):
 		self.runParams = runParams
@@ -296,8 +301,9 @@ class ExtractHistos(object):
 			endTime = time.time()
 			totalTime = endTime - startTime
 			histos.finalize()
-
-			print(".\n")
+			
+			if not runParams.useDebugOutput:
+				print(".\n")
 		
 		print "%i events in %.2fs (%.2f events/sec)" % (totalEventCount, totalTime, totalEventCount/totalTime)
 			

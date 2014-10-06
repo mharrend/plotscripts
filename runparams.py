@@ -7,6 +7,7 @@ class RunParams(object):
 		self.visualizationEnergyCutoff = -1
 		self.visualizationShowUnderlyingEvent = True
 		self.visualizationShowMainInteraction = True
+		self.visualizationColorSpecialJets = False
 		self.maxEvents = -1
 		self.useDebugOutput = False
 		self.etaCut = 2.5
