@@ -48,6 +48,7 @@ class ArgParser(object):
 	    print " -vni | --visualize-no-main-interaction:  Do not visualize the main interaction"
 	    print " -vsj | --visualize-color-special-jets:   Color special particle jets"
 	    print " -ve  | --visualize-energy-cutoff:        Specify Visualization energy cutoff (double)"
+	    print " -vr  | --visualize-renderer:             Specify GraphViz renderer (string), defaults to 'dot'"
 	    print " -#   | --events:                         Specify events to processed (list of ints seperated by ',')"
 	    print ""
 	    
@@ -131,6 +132,13 @@ class ArgParser(object):
 		    if nextArg is None or nextArg[0] == '-':
 			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
 		    self.runParams.visualizationEnergyCutoff = int(nextArg)
+		    skip = True
+		    continue
+		
+		if ( arg == "-vr" ) or ( arg == "--visualize-renderer:" )  :
+		    if nextArg is None or nextArg[0] == '-':
+			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
+		    self.runParams.visualizationRenderer = nextArg
 		    skip = True
 		    continue
 		

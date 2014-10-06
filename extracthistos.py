@@ -211,7 +211,6 @@ class ExtractHistos(object):
 		specialParticles.Hs = Hs
 		return specialParticles
 		
-
 	def findMotherParticles(self, genParticlesProduct):
 		
 		return genParticlesProduct[0], genParticlesProduct[1]
@@ -225,7 +224,7 @@ class ExtractHistos(object):
 			#status = currentParticle.status()
 			#print "particle #" + str(currentParticleIndex) + ": " + GetParticleName(pdgId) + "[" + str(status) + "]"
 
-	def processEvent(self,infoObj, genJetsObj, genParticlesObj, currentCut, currentEventIndex, currentEvent, histos):
+	def processEvent(self,infoObj, genJetsObj, genParticlesObj, currentCut, currentCutIndex, currentEventIndex, currentEvent, histos):
 		currentEvent.getByLabel (genJetsObj.label, genJetsObj.handle)
 		genJetsProduct = genJetsObj.handle.product()
 		currentEvent.getByLabel (infoObj.label, infoObj.handle)
@@ -238,8 +237,8 @@ class ExtractHistos(object):
 		self.plotGenJets(histos,currentCut,eventweight,genJetsProduct)
 		specialParticles = self.findAndPlotSpecialHardParticles(histos,eventweight,motherParticles[0])
 		
-		if self.runParams.useVisualization:
-			fileName = "cut" + str(currentCut) + "_event" + str(currentEventIndex);
+		if self.runParams.useVisualization and currentCutIndex == 0:
+			fileName = "event" + str(currentEventIndex);
 			visual.GraphViz(fileName, motherParticles, self.runParams, ([], []), specialParticles)
 	
 	def run(self, runParams):
@@ -296,7 +295,7 @@ class ExtractHistos(object):
 						sys.stdout.write('.')
 						sys.stdout.flush()
 							
-				self.processEvent( infoObj, genJetsObj, genParticlesObj, currentCut, currentEventIndex, currentEvent, histos )
+				self.processEvent( infoObj, genJetsObj, genParticlesObj, currentCut, currentCutIndex, currentEventIndex, currentEvent, histos )
 				
 			endTime = time.time()
 			totalTime = endTime - startTime

@@ -8,6 +8,7 @@ class RunParams(object):
 		self.visualizationShowUnderlyingEvent = True
 		self.visualizationShowMainInteraction = True
 		self.visualizationColorSpecialJets = False
+		self.visualizationRenderer = "dot"
 		self.maxEvents = -1
 		self.useDebugOutput = False
 		self.etaCut = 2.5

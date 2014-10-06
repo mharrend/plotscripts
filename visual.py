@@ -1,6 +1,7 @@
 import copy
 from collections import namedtuple
 from subprocess import call
+from sets import Set
 
 import thread
 import threading
@@ -59,16 +60,19 @@ def GraphViz(fileName, referenceParticles,  runParams, isrFsr, specialParticles)
 	if mainInteractionInfo.useMainInteractionInfo:
 		mainInteractionInfo.mainInteractionBranches, mainInteractionInfo.underlyingEventBranches = GetSpecialBranches(referenceParticles)
 		
-	RecurseParticle(f, referenceParticles[0], 0, "", 0,  runParams, mainInteractionInfo, isrFsr, specialParticles)
-	RecurseParticle(f, referenceParticles[1], 0, "", 0,  runParams, mainInteractionInfo, isrFsr, specialParticles)
+	particleSet = Set()
+	particleConnectionSet = Set()
+		
+	RecurseParticle(f, referenceParticles[0], 0, "", 0,  particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles)
+	RecurseParticle(f, referenceParticles[1], 0, "", 0,  particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles)
 	
 	f.write("}\n")
 	f.close()
 	
-	GraphVizCreate (diFileName, pngFileName )
+	GraphVizCreate (runParams, diFileName, pngFileName )
 
-def GraphVizCreate(diFileName, pngFileName):
-	call(["twopi", diFileName ,"-Tpng","-o",pngFileName ])	
+def GraphVizCreate(runParams, diFileName, pngFileName):
+	call([runParams.visualizationRenderer, diFileName ,"-Tpng","-o",pngFileName ])	
 	
 def CreateColorChannelFromIndex(index,parity=1):
 	color = index * (256-25)
@@ -90,10 +94,29 @@ def CreateColorFromParams(jetType,numJet):
 	else:
 		raise Exception("unknown jet type: '" + jetType + "'")
 	
-def RecurseParticle(f, p, rec, last, index, runParams, mainInteractionInfo, isrFsr, specialParticles, isWDaughter=False,  isBDaughter=False,  isHDaughter=False):
-		
+def GetPointer(p):
+	strP = str(p)
+	indexF = strP.find('0x')+2
+	particleIdentifier = "P" + strP[indexF:]
+	indexL = particleIdentifier.find('>')
+	return particleIdentifier[:indexL]
+
+	
+def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, isWDaughter=False,  isBDaughter=False,  isHDaughter=False):
+
 	if p.p4().energy() < runParams.visualizationEnergyCutoff:
 		return
+	
+	pPtr = GetPointer(p)
+	
+	duplicateParticle = pPtr in particleSet
+		
+	#print GetParticleName(p.pdgId()) + " [" + str(p.status()) + "]",
+	#print "0x" + GetPointer(p),
+	#print ": size: " + str(len(particleSet)),
+	particleSet.add(pPtr)
+	#print "->" + str(len(particleSet)) 
+
 	
 	if mainInteractionInfo.useMainInteractionInfo:
 		if not runParams.visualizationShowUnderlyingEvent:
@@ -143,11 +166,7 @@ def RecurseParticle(f, p, rec, last, index, runParams, mainInteractionInfo, isrF
 		#fillColorString="gray"
 		#styleString = ", style=filled"
 	#Ws, Bs, Hs
-	strP = str(p)
-	indexF = strP.find('0x')+2
-	particleIdentifier = "P" + strP[indexF:]
-	indexL = particleIdentifier.find('>')
-	particleIdentifier = particleIdentifier[:indexL]
+	particleIdentifier = pPtr
 	particleLabel = particleName
 	particleLabelFinal = particleLabel + "[" + typeString + "]"
 
@@ -171,15 +190,15 @@ def RecurseParticle(f, p, rec, last, index, runParams, mainInteractionInfo, isrF
 		
 		if runParams.visualizationColorSpecialJets:
 			for w in specialParticles.Ws:
-				if p == w:
+				if GetPointer(p) == GetPointer(w):
 					isWDaughter = True
 					
 			for b in specialParticles.Bs:
-				if p == b:
+				if GetPointer(p) == GetPointer(b):
 					isBDaughter = True
 				
 			for h in specialParticles.Hs:
-				if p == h:
+				if GetPointer(p) == GetPointer(h):
 					isHDaughter = True
 				
 		if not runParams.visualizationColorSpecialJets or not (isWDaughter or isBDaughter or isHDaughter):
@@ -188,8 +207,8 @@ def RecurseParticle(f, p, rec, last, index, runParams, mainInteractionInfo, isrF
 
 				nDaughters = jet.numberOfDaughters()
 				for i in range(0,nDaughters):
-					currentCandidate = jet.daughter(i)
-					if currentCandidate == p:
+					currentCandidate = GetPointer(jet.daughter(i))
+					if currentCandidate == pPtr:
 						#particleLabelFinal = str(numJet)
 						colorString = "red"
 						textColorString = "black"
@@ -199,8 +218,8 @@ def RecurseParticle(f, p, rec, last, index, runParams, mainInteractionInfo, isrF
 			for numJet, jet in enumerate(isrFsr[1]):
 				nDaughters = jet.numberOfDaughters()
 				for i in range(0,nDaughters):
-					currentCandidate = jet.daughter(i)
-					if currentCandidate == p:
+					currentCandidate = GetPointer(jet.daughter(i))
+					if currentCandidate == pPtr:
 						#particleLabelFinal = str(numJet)
 						colorString = "blue"
 						textColorString = "black"
@@ -210,15 +229,27 @@ def RecurseParticle(f, p, rec, last, index, runParams, mainInteractionInfo, isrF
 	attrib = styleString + ", color=" + colorString + ", fillcolor=" + fillColorString + ", fontcolor=" + textColorString
 		
 	f.write(particleIdentifier + "[label=\"" + particleLabelFinal + "\"" + attrib + "];\n")
+	
+	
 	if last <> "":
-		f.write(last + " -> " + particleIdentifier + ";\n")
+		particleConnection = last + " -> " + particleIdentifier + ";\n"
+		if particleConnection not in particleConnectionSet:
+			f.write(particleConnection)
+			particleConnectionSet.add(particleConnection)
 		
 	#n = p.numberOfMothers();
+	#for i in range(0,n):
+		#RecurseParticle(f, p.mother(i), rec + 1, particleIdentifier, i, particleSet, runParams, mainInteractionInfo, isrFsr, specialParticles, isWDaughter, isBDaughter, isHDaughter)
+		#f.write(GetPointer(p.mother(i)) + " -> " + particleIdentifier + ";\n")
+
 	#if n>1:
 		#print GetParticleName(p.pdgId()) + "[" + str(p.status()) + "] has " + str(n) + " mothers."
 		#for i in range(0,n):
 			#print GetParticleName(p.mother(i).pdgId()) + " [" + str(p.mother(i).status()) + "]"
-			
+	
+	#if duplicateParticle:
+		#return
+	
 	n = p.numberOfDaughters();
 	for i in range(0,n):
-		RecurseParticle(f, p.daughter(i), rec + 1, particleIdentifier, i, runParams, mainInteractionInfo, isrFsr, specialParticles, isWDaughter, isBDaughter, isHDaughter)
+		RecurseParticle(f, p.daughter(i), rec + 1, particleIdentifier, i, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, isWDaughter, isBDaughter, isHDaughter)
