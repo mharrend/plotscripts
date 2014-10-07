@@ -147,12 +147,20 @@ class ExtractHistos(object):
 		nLeptonicWDecays = 0
 		nHadronicWDecays = 0
 		
+		#histos.W_Pt.check("findSpecialHardParticles post")
+		
 		for idx,w in enumerate(Ws):
+			#print "W_Pt->",
+			
+			#histos.W_Pt.check("enumerate(Ws) " + str(idx))
 			
 			histos.W_Pt.fill(eventweight,w.pt())
 			histos.W_M.fill(eventweight,w.p4().M())
 			histos.W_E.fill(eventweight,w.energy())
+			#print "ok"
 			#W_E.fill(eventweight,w.deltaR())
+			
+			#histos.W_Pt.check("enumerate(Ws) " + str(idx) + " B")
 			
 			WDecay = self.WGetDecayType(w)
 			isLeptonic = WDecay[0]
@@ -250,25 +258,24 @@ class ExtractHistos(object):
 		
 		startTime = time.time()
 		
+		genJetsObj = namedtuple('Obj', ['handle', 'label'])
+		genJetsObj.handle = Handle ('std::vector<reco::GenJet>')
+		genJetsObj.label="ak5GenJets"
+		
+		infoObj = namedtuple('Obj', ['handle', 'label'])
+		infoObj.handle = Handle ('<GenEventInfoProduct>')
+		infoObj.label="generator"
+		
+		genParticlesObj = namedtuple('Obj', ['handle', 'label'])
+		genParticlesObj.handle = Handle ('std::vector<reco::GenParticle>')
+		genParticlesObj.label="genParticles"
+		
 		for currentCutIndex, currentCut in enumerate(runParams.pTCuts):
 			if Break:
 				break
 			
 			events = Events (self.runParams.inputFileList)
-			
 			histos = Histos(str(currentCut),outputFileObject)
-			
-			genJetsObj = namedtuple('Obj', ['handle', 'label'])
-			genJetsObj.handle = Handle ('std::vector<reco::GenJet>')
-			genJetsObj.label="ak5GenJets"
-			
-			infoObj = namedtuple('Obj', ['handle', 'label'])
-			infoObj.handle = Handle ('<GenEventInfoProduct>')
-			infoObj.label="generator"
-			
-			genParticlesObj = namedtuple('Obj', ['handle', 'label'])
-			genParticlesObj.handle = Handle ('std::vector<reco::GenParticle>')
-			genParticlesObj.label="genParticles"
 			
 			print 'Processing ' + str(events.size()) + ' events @ pTCut='+str(currentCut)+'GeV'
 			if not runParams.useDebugOutput:
@@ -299,7 +306,9 @@ class ExtractHistos(object):
 				
 			endTime = time.time()
 			totalTime = endTime - startTime
+			#print "histos.finalize"
 			histos.finalize()
+			del histos
 			
 			if not runParams.useDebugOutput:
 				print(".\n")
