@@ -48,6 +48,7 @@ class ArgParser(object):
 	    print " -vni | --visualize-no-main-interaction:  Do not visualize the main interaction"
 	    print " -vsj | --visualize-color-special-jets:   Color special particle jets"
 	    print " -ve  | --visualize-energy-cutoff:        Specify Visualization energy cutoff (double)"
+	    print " -vem | --visualize-energy-mode:          Color particles by their energy"
 	    print " -vr  | --visualize-renderer:             Specify GraphViz renderer (string), defaults to 'dot'"
 	    print " -#   | --events:                         Specify events to processed (list of ints seperated by ',')"
 	    print ""
@@ -126,6 +127,10 @@ class ArgParser(object):
 		
 		if ( arg == "-vsj" ) or ( arg == "--visualize-color-special-jets" )  :
 		    self.runParams.visualizationColorSpecialJets = True
+		    continue
+		
+		if ( arg == "-vem" ) or ( arg == "--visualize-energy-mode" )  :
+		    self.runParams.visualizationEnergyMode = True
 		    continue
 		
 		if ( arg == "-ve" ) or ( arg == "--visualize-energy-cutoff" )  :

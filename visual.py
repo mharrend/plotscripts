@@ -3,6 +3,7 @@ from collections import namedtuple
 from subprocess import call
 from sets import Set
 
+import math
 import thread
 import threading
 import runparams
@@ -94,6 +95,57 @@ def CreateColorFromParams(jetType,numJet):
 	else:
 		raise Exception("unknown jet type: '" + jetType + "'")
 	
+def ScaleEnergy(energy,scaleMax,factor):
+	return min(scaleMax,factor*energy)
+	
+def scaleToRgb(scale):
+	if scale <= 1:
+		c = scale
+		return 0,0,c
+	if scale <= 2: 
+		c = scale-1
+		return 0,c,(1-c)
+	if scale <= 3: 
+		c = scale-2
+		return c,1-c,0
+	if scale <= 4: 
+		c = scale-3
+		return 1,0,c
+
+	return 1,0,1
+	
+def ratioToHexChannel(ratio):
+	color = int(ratio * (255))
+	colorString = hex(color)
+	result = colorString[2:]
+	if len(result) == 1:
+		result = "0" + result
+	return result	
+	
+def RgbToString(rgb):
+	return ratioToHexChannel(rgb[0]) + ratioToHexChannel(rgb[1]) +ratioToHexChannel(rgb[2])
+	
+def CreateColorFromEnergy(energy):
+	scale = ScaleEnergy(math.log(energy),4,0.5)
+	rgb = scaleToRgb(scale)
+	rgbString = RgbToString(rgb)
+	print "energy: " + str(energy) + " scale: " + str(scale) + "RGB=" + rgbString
+	
+	#h = hex(int(energy/2)%256)[2:]
+	#r = hex(int(energy/4)%256)[2:]
+	#if len(h) == 1:
+		#h =  "0" + h
+	#if len(r) == 1:
+		#r =  "0" + r
+	#if r == "00":
+		#result = "0000" + h
+	#else:
+		#result = r + "0000"
+	 
+	result = rgbString
+	 
+	return result
+	
 def GetPointer(p):
 	strP = str(p)
 	indexF = strP.find('0x')+2
@@ -172,56 +224,65 @@ def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, 
 
 	#print "runParams.visualizationColorSpecialJets=" + str(runParams.visualizationColorSpecialJets)	
 
-	if runParams.visualizationColorSpecialJets and (isWDaughter or isBDaughter or isHDaughter) :
+	if runParams.visualizationEnergyMode:
+		
 		colorString = "black"
 		textColorString = "black"
-		if isWDaughter:
-			fillColorString = "red"
-			#particleLabelFinal = "<W>"
-		if isBDaughter:
-			fillColorString = "orange"
-			#particleLabelFinal = "<B>"
-		if isHDaughter:
-			fillColorString = "deeppink"
-			#particleLabelFinal = "<H>"
+		fillColorString='"#'+CreateColorFromEnergy(p.energy())+'"'
 		styleString = ", style=filled"
-	
-	else:
 		
-		if runParams.visualizationColorSpecialJets:
-			for w in specialParticles.Ws:
-				if GetPointer(p) == GetPointer(w):
-					isWDaughter = True
-					
-			for b in specialParticles.Bs:
-				if GetPointer(p) == GetPointer(b):
-					isBDaughter = True
-				
-			for h in specialParticles.Hs:
-				if GetPointer(p) == GetPointer(h):
-					isHDaughter = True
-				
-		if not runParams.visualizationColorSpecialJets or not (isWDaughter or isBDaughter or isHDaughter):
+	else:
 
-			for numJet, jet in enumerate(isrFsr[0]):
-				currentCandidate = GetPointer(jet)
-				if currentCandidate == pPtr:
-					#particleLabelFinal = str(numJet)
-					colorString = "red"
-					textColorString = "black"
-					#fillColorString='"#'+CreateColorFromParams("ISR",numJet)+'"'
-					fillColorString='"#00FFFF"'
-					styleString = ", style=filled"
+		if runParams.visualizationColorSpecialJets and (isWDaughter or isBDaughter or isHDaughter) :
+			colorString = "black"
+			textColorString = "black"
+			if isWDaughter:
+				fillColorString = "red"
+				#particleLabelFinal = "<W>"
+			if isBDaughter:
+				fillColorString = "orange"
+				#particleLabelFinal = "<B>"
+			if isHDaughter:
+				fillColorString = "deeppink"
+				#particleLabelFinal = "<H>"
+			styleString = ", style=filled"
+		
+		else:
+			
+			if runParams.visualizationColorSpecialJets:
+				for w in specialParticles.Ws:
+					if GetPointer(p) == GetPointer(w):
+						isWDaughter = True
 						
-			for numJet, jet in enumerate(isrFsr[1]):
-				currentCandidate = GetPointer(jet)
-				if currentCandidate == pPtr:
-					#particleLabelFinal = str(numJet)
-					colorString = "blue"
-					textColorString = "black"
-					#fillColorString='"#'+CreateColorFromParams("FSR",numJet)+'"'
-					fillColorString='"#0000FF"'
-					styleString = ", style=filled"
+				for b in specialParticles.Bs:
+					if GetPointer(p) == GetPointer(b):
+						isBDaughter = True
+					
+				for h in specialParticles.Hs:
+					if GetPointer(p) == GetPointer(h):
+						isHDaughter = True
+					
+			if not runParams.visualizationColorSpecialJets or not (isWDaughter or isBDaughter or isHDaughter):
+	
+				for numJet, jet in enumerate(isrFsr[0]):
+					currentCandidate = GetPointer(jet)
+					if currentCandidate == pPtr:
+						#particleLabelFinal = str(numJet)
+						colorString = "red"
+						textColorString = "black"
+						#fillColorString='"#'+CreateColorFromParams("ISR",numJet)+'"'
+						fillColorString='"#00FFFF"'
+						styleString = ", style=filled"
+							
+				for numJet, jet in enumerate(isrFsr[1]):
+					currentCandidate = GetPointer(jet)
+					if currentCandidate == pPtr:
+						#particleLabelFinal = str(numJet)
+						colorString = "blue"
+						textColorString = "black"
+						#fillColorString='"#'+CreateColorFromParams("FSR",numJet)+'"'
+						fillColorString='"#0000FF"'
+						styleString = ", style=filled"
 	
 	attrib = styleString + ", color=" + colorString + ", fillcolor=" + fillColorString + ", fontcolor=" + textColorString
 		
