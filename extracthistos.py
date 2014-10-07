@@ -38,35 +38,28 @@ def InitializeFWLite():
 	
 	IsInitialized = True
 
+def GetPointer(p):
+	strP = str(p)
+	indexF = strP.find('0x')+2
+	particleIdentifier = "P" + strP[indexF:]
+	indexL = particleIdentifier.find('>')
+	return particleIdentifier[:indexL]
+
 class ExtractHistos(object):
 		
 	def getAllRelevantDaughters(self, referenceParticle, referenceJets, currentList):
-		numberOfDaughters = referenceParticle.numberOfDaughters()
 		
 		if referenceParticle.status() < 10:
-			#if runParams.useDebugOutput:
-				#print " " * abs(nRecursions) + "*" + GetParticleName( referenceParticle.pdgId() ) + "[" + str(referenceParticle.status()) + "]"
-
-			currentList.add(referenceParticle)
+			currentList.append(referenceParticle)
 			return
 		
-		for i in range (0,numberOfDaughters):
-					
-			cParticle = referenceParticle.daughter(i)
-			
-			#if runParams.useDebugOutput:
-				#print " " * abs(nRecursions) + ">" + GetParticleName( cParticle.pdgId() ) + "[" + str(cParticle.status()) + "]" 
-			
+		for cParticle in referenceParticle:
 			self.getAllRelevantDaughters(cParticle,referenceJets, currentList)
 		return
 		
 	def WGetDecayType(self, referenceParticle):
 			
-		numberOfDaughters = referenceParticle.numberOfDaughters()
-				
-		for i in range (0,numberOfDaughters):
-			
-			cParticle = referenceParticle.daughter(i)
+		for cParticle in referenceParticle:
 			absPdgId = abs(cParticle.pdgId())
 			
 			if absPdgId == 24:
@@ -108,9 +101,7 @@ class ExtractHistos(object):
 		
 	def findSpecialHardParticles(self, referenceParticle, Ws = [], Bs = [], Hs = [], hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
 		if referenceParticle is not None:
-			numberOfDaughters = referenceParticle.numberOfDaughters()
-			for i in range (0,numberOfDaughters):
-				cParticle = referenceParticle.daughter(i)
+			for cParticle in referenceParticle:
 				cStatus = cParticle.status()
 				
 				thisIsTop = False
@@ -170,9 +161,7 @@ class ExtractHistos(object):
 				histos.W_Leptonic_Pt.fill(eventweight,WReferenceparticle.p4().pt())
 				histos.W_Leptonic_E.fill(eventweight,WReferenceparticle.p4().energy())
 				
-				numDaughters = WReferenceparticle.numberOfDaughters()
-				for i in range (0, numDaughters):
-					cChild = WReferenceparticle.daughter(i)
+				for cChild in WReferenceparticle:
 					pdgId = cChild.pdgId()
 					if pdgId == 11:
 						histos.W_Leptonic_e_Pt.fill(eventweight,cChild.p4().pt())
@@ -232,6 +221,46 @@ class ExtractHistos(object):
 			#status = currentParticle.status()
 			#print "particle #" + str(currentParticleIndex) + ": " + GetParticleName(pdgId) + "[" + str(status) + "]"
 
+	def findFirstHardParticles(self,referenceParticle, currentList):
+		
+		if 20 <= referenceParticle.status() <= 29:
+			currentList.add(referenceParticle)
+			return
+		
+		for cParticle in referenceParticle:
+			self.findFirstHardParticles(cParticle, currentList)
+		return	
+		
+	def findMainInteractionChainParticles(self,particles, mainInteractionChainParticles, rec = 0):
+		for p in particles:
+			if rec > 0:
+				mainInteractionChainParticles.add(p)
+			mothers = []
+			nMothers = p.numberOfMothers()
+			for i in range (0,nMothers):
+				mothers.append(p.mother(i))
+			self.findMainInteractionChainParticles(mothers,mainInteractionChainParticles, rec + 1)
+		
+	def findIsrJetParticles(self,mainInteractionChainParticles,firstHardParticles,isrJetParticles):
+		for mic in mainInteractionChainParticles:
+			for fhp in firstHardParticles:
+				if GetPointer(mic) == GetPointer(fhp):
+					continue
+			for d in mic:
+				found = False
+				for fhp in firstHardParticles:
+					if GetPointer(d) == GetPointer(fhp):
+						found = True
+				for mic in mainInteractionChainParticles:
+					if GetPointer(d) == GetPointer(mic):
+						found = True
+				if found:
+					continue
+				isrJetParticles.add(d)
+				
+	#def findFsrJetParticles(self,motherParticles,hardParticles):
+		
+
 	def processEvent(self,infoObj, genJetsObj, genParticlesObj, currentCut, currentCutIndex, currentEventIndex, currentEvent, histos):
 		currentEvent.getByLabel (genJetsObj.label, genJetsObj.handle)
 		genJetsProduct = genJetsObj.handle.product()
@@ -245,9 +274,26 @@ class ExtractHistos(object):
 		self.plotGenJets(histos,currentCut,eventweight,genJetsProduct)
 		specialParticles = self.findAndPlotSpecialHardParticles(histos,eventweight,motherParticles[0])
 		
+		firstHardParticles = Set()
+		self.findFirstHardParticles(motherParticles[0],firstHardParticles)
+		self.findFirstHardParticles(motherParticles[1],firstHardParticles)
+		#for p in firstHardParticles:
+			#print "FHP: " + GetPointer(p) + " " + GetParticleName(p.pdgId()) + " [" + str(p.status()) + "]"
+		mainInteractionChainParticles = Set()
+		self.findMainInteractionChainParticles(firstHardParticles,mainInteractionChainParticles)
+		#for p in mainInteractionChainParticles:
+			#print "MIP: " + GetPointer(p) + " " + GetParticleName(p.pdgId()) + " [" + str(p.status()) + "]"
+		isrJetParticles = Set()
+		self.findIsrJetParticles(mainInteractionChainParticles,firstHardParticles,isrJetParticles)
+		#for p in isrJetParticles:
+			#print "ISR: " + GetPointer(p) + " " + GetParticleName(p.pdgId()) + " [" + str(p.status()) + "]"
+
+		fsrJetParticles = []
+		#self.findFsrJetParticles(?,fsrJetParticles)
+		
 		if self.runParams.useVisualization and currentCutIndex == 0:
 			fileName = "event" + str(currentEventIndex);
-			visual.GraphViz(fileName, motherParticles, self.runParams, ([], []), specialParticles)
+			visual.GraphViz(fileName, motherParticles, self.runParams, (isrJetParticles, []), specialParticles)
 	
 	def run(self, runParams):
 		self.runParams = runParams

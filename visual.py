@@ -204,27 +204,24 @@ def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, 
 		if not runParams.visualizationColorSpecialJets or not (isWDaughter or isBDaughter or isHDaughter):
 
 			for numJet, jet in enumerate(isrFsr[0]):
-
-				nDaughters = jet.numberOfDaughters()
-				for i in range(0,nDaughters):
-					currentCandidate = GetPointer(jet.daughter(i))
-					if currentCandidate == pPtr:
-						#particleLabelFinal = str(numJet)
-						colorString = "red"
-						textColorString = "black"
-						fillColorString='"#'+CreateColorFromParams("ISR",numJet)+'"'
-						styleString = ", style=filled"
+				currentCandidate = GetPointer(jet)
+				if currentCandidate == pPtr:
+					#particleLabelFinal = str(numJet)
+					colorString = "red"
+					textColorString = "black"
+					#fillColorString='"#'+CreateColorFromParams("ISR",numJet)+'"'
+					fillColorString='"#00FFFF"'
+					styleString = ", style=filled"
 						
 			for numJet, jet in enumerate(isrFsr[1]):
-				nDaughters = jet.numberOfDaughters()
-				for i in range(0,nDaughters):
-					currentCandidate = GetPointer(jet.daughter(i))
-					if currentCandidate == pPtr:
-						#particleLabelFinal = str(numJet)
-						colorString = "blue"
-						textColorString = "black"
-						fillColorString='"#'+CreateColorFromParams("FSR",numJet)+'"'
-						styleString = ", style=filled"
+				currentCandidate = GetPointer(jet)
+				if currentCandidate == pPtr:
+					#particleLabelFinal = str(numJet)
+					colorString = "blue"
+					textColorString = "black"
+					#fillColorString='"#'+CreateColorFromParams("FSR",numJet)+'"'
+					fillColorString='"#0000FF"'
+					styleString = ", style=filled"
 	
 	attrib = styleString + ", color=" + colorString + ", fillcolor=" + fillColorString + ", fontcolor=" + textColorString
 		
