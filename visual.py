@@ -107,9 +107,12 @@ def scaleToRgb(scale):
 		return 0,c,(1-c)
 	if scale <= 3: 
 		c = scale-2
-		return c,1-c,0
+		return c,1,0
 	if scale <= 4: 
 		c = scale-3
+		return 1,1-c,0
+	if scale <= 5: 
+		c = scale-4
 		return 1,0,c
 
 	return 1,0,1
@@ -126,10 +129,10 @@ def RgbToString(rgb):
 	return ratioToHexChannel(rgb[0]) + ratioToHexChannel(rgb[1]) +ratioToHexChannel(rgb[2])
 	
 def CreateColorFromEnergy(energy):
-	scale = ScaleEnergy(math.log(energy),4,0.5)
+	scale = ScaleEnergy(math.log(energy),5,0.55)
 	rgb = scaleToRgb(scale)
 	rgbString = RgbToString(rgb)
-	print "energy: " + str(energy) + " scale: " + str(scale) + "RGB=" + rgbString
+	#print "energy: " + str(energy) + " scale: " + str(scale) + "RGB=" + rgbString
 	
 	#h = hex(int(energy/2)%256)[2:]
 	#r = hex(int(energy/4)%256)[2:]
