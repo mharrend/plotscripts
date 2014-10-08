@@ -147,11 +147,15 @@ def GetPointer(p):
 	
 def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot, isWDaughter=False,  isBDaughter=False,  isHDaughter=False):
 
+	cutThis = False
+
 	if p.p4().energy() < runParams.visualizationEnergyCutoff:
-		return
+		cutThis = True
+		#return
 	
-	if p.pt() < runParams.visualizationPtCutoff:
-		return
+	#if p.pt() < runParams.visualizationPtCutoff:
+		#cutThis = True
+		##return
 	
 	pPtr = GetPointer(p)
 	duplicateParticle = pPtr in particleSet
@@ -256,6 +260,9 @@ def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, 
 				fillColorString='"#00FFFF"'
 				styleString = ", style=filled"
 				isrFsrJetColored = True
+				
+		if runParams.visualizationCutoffRadiation and isrFsrJetColored:
+			cutThis = True
 
 		if not isrFsrJetColored and runParams.visualizationColorSpecialJets and (isWDaughter or isBDaughter or isHDaughter) :
 			colorString = "black"
@@ -293,6 +300,9 @@ def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, 
 		if particleConnection not in particleConnectionSet:
 			f.write(particleConnection)
 			particleConnectionSet.add(particleConnection)
+		
+	if cutThis:
+		return
 		
 	n = p.numberOfDaughters();
 	for i in range(0,n):

@@ -5,7 +5,8 @@ class RunParams(object):
 		self.outputFile = "output-extracted.root"
 		self.useVisualization = False
 		self.visualizationEnergyCutoff = -1
-		self.visualizationPtCutoff = -1
+		self.visualizationCutoffRadiation = False
+		#self.visualizationPtCutoff = -1
 		self.visualizationShowUnderlyingEvent = True
 		self.visualizationShowMainInteraction = True
 		self.visualizationColorSpecialJets = False

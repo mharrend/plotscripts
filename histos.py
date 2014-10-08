@@ -64,6 +64,12 @@ class Histos(object):
 		self.nFsrJets = Histogram(outputFileObject, "HnFsrJets"+currentCutString,"Number of FSR Jets per Event "+currentCutString, 15, -0.5, 14.5)
 		self.nFsrJetsME = Histogram(outputFileObject, "HnFsrJetsME"+currentCutString,"Number of FSR Jets per Event (ME) "+currentCutString, 15, -0.5, 14.5)
 		self.nFsrJetsPS = Histogram(outputFileObject, "HnFsrJetsPS"+currentCutString,"Number of FSR Jets per Event (PS) "+currentCutString, 15, -0.5, 14.5)
+		
+		#self.uEventPt = Histogram(outputFileObject, "HueventPt"+currentCutString, "pT of underlying Event "+currentCutString,100,0,300)
+		#self.uEventE = Histogram(outputFileObject, "HueventE"+currentCutString, "Energy of underlying Event "+currentCutString,100,0,300)
+		
+		self.particlePt = Histogram(outputFileObject, "HparticlePt"+currentCutString, "pT of particles "+currentCutString,100,0,300)
+		self.particleE = Histogram(outputFileObject, "HparticleE"+currentCutString, "Energy of particles "+currentCutString,100,0,300)
 			
 	def finalize (self):
 		self.njets.finalize()
@@ -108,8 +114,23 @@ class Histos(object):
 		self.secondjetpt.finalize()
 		self.firstjeteta.finalize()
 		
+		self.isrjetenergy.finalize()
+		self.fsrjetenergy.finalize()
+		self.fsrjetenergyME.finalize()
+		self.fsrjetenergyPS.finalize()
 		self.isrjetpt.finalize()
 		self.fsrjetpt.finalize()
+		self.fsrjetptME.finalize()
+		self.fsrjetptPS.finalize()
 		self.nIsrJets.finalize()
 		self.nFsrJets.finalize()
+		self.nFsrJetsME.finalize()
+		self.nFsrJetsPS.finalize()
+		
+		#self.uEventPt.finalize()
+		#self.uEventPt.finalize()
+		
+		self.particlePt.finalize()
+		self.particleE.finalize()
+
 		

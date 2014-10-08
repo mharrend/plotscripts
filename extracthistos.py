@@ -380,6 +380,12 @@ class ExtractHistos(object):
 			histos.fsrjetpt.fill(eventweight,p.pt())
 			histos.nFsrJets.fill(eventweight,1)
 		
+		
+		# particle Energy
+		for p in genParticlesProduct:
+			histos.particlePt.fill(eventweight,p.pt())
+			histos.particleE.fill(eventweight,p.energy())
+		
 		plotSlot = []
 		
 	
