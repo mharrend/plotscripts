@@ -52,10 +52,18 @@ class Histos(object):
 		self.firstjetpt = Histogram(outputFileObject, "HfirstJetpt"+currentCutString,"Pt of hardest Gen-Jet "+currentCutString, 100,0,300)
 		self.firstjeteta = Histogram(outputFileObject, "H1sJeteta"+currentCutString,"Eta of hardest Gen-Jet "+currentCutString,50,-5,5)
 		self.secondjetpt = Histogram(outputFileObject, "HsecondJetpt"+currentCutString,"Pt of 2nd hardest Gen-Jet "+currentCutString, 100,0,300)
+		self.isrjetenergy = Histogram(outputFileObject, "Hisrjetenergy"+currentCutString, "Energy of ISR-Jets "+currentCutString,100,0,300)
+		self.fsrjetenergy = Histogram(outputFileObject, "Hfsrjetenergy"+currentCutString, "Energy of FSR-Jets "+currentCutString,100,0,300)
+		self.fsrjetenergyME = Histogram(outputFileObject, "HfsrjetenergyME"+currentCutString, "Energy of FSR-Jets (ME) "+currentCutString,100,0,300)
+		self.fsrjetenergyPS = Histogram(outputFileObject, "HfsrjetenergyPS"+currentCutString, "Energy of FSR-Jets (PS) "+currentCutString,100,0,300)
 		self.isrjetpt = Histogram(outputFileObject, "Hisrjetpt"+currentCutString, "Pt of ISR-Jets "+currentCutString,100,0,300)
 		self.fsrjetpt = Histogram(outputFileObject, "Hfsrjetpt"+currentCutString, "Pt of FSR-Jets "+currentCutString,100,0,300)
+		self.fsrjetptME = Histogram(outputFileObject, "HfsrjetptME"+currentCutString, "Pt of FSR-Jets (ME) "+currentCutString,100,0,300)
+		self.fsrjetptPS = Histogram(outputFileObject, "HfsrjetptPS"+currentCutString, "Pt of FSR-Jets (PS) "+currentCutString,100,0,300)
 		self.nIsrJets = Histogram(outputFileObject, "HnIsrJets"+currentCutString,"Number of ISR Jets per Event "+currentCutString, 15, -0.5, 14.5)
 		self.nFsrJets = Histogram(outputFileObject, "HnFsrJets"+currentCutString,"Number of FSR Jets per Event "+currentCutString, 15, -0.5, 14.5)
+		self.nFsrJetsME = Histogram(outputFileObject, "HnFsrJetsME"+currentCutString,"Number of FSR Jets per Event (ME) "+currentCutString, 15, -0.5, 14.5)
+		self.nFsrJetsPS = Histogram(outputFileObject, "HnFsrJetsPS"+currentCutString,"Number of FSR Jets per Event (PS) "+currentCutString, 15, -0.5, 14.5)
 			
 	def finalize (self):
 		self.njets.finalize()

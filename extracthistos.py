@@ -359,8 +359,30 @@ class ExtractHistos(object):
 		fsrJetParticlesPS = Set()
 		self.findFsrJetParticlesPS(hardMEFermionChainParticles,fsrJetParticlesPS)
 		
+		for p in isrJetParticles:
+			histos.isrjetenergy.fill(eventweight,p.energy())
+			histos.isrjetpt.fill(eventweight,p.pt())
+			histos.nIsrJets.fill(eventweight,1)
+			
+		for p in fsrJetParticlesME:
+			histos.fsrjetenergyME.fill(eventweight,p.energy())
+			histos.fsrjetptME.fill(eventweight,p.pt())
+			histos.nFsrJetsME.fill(eventweight,1)
+			histos.fsrjetenergy.fill(eventweight,p.energy())
+			histos.fsrjetpt.fill(eventweight,p.pt())
+			histos.nFsrJets.fill(eventweight,1)
+			
+		for p in fsrJetParticlesPS:
+			histos.fsrjetenergyPS.fill(eventweight,p.energy())
+			histos.fsrjetptPS.fill(eventweight,p.pt())
+			histos.nFsrJetsPS.fill(eventweight,1)
+			histos.fsrjetenergy.fill(eventweight,p.energy())
+			histos.fsrjetpt.fill(eventweight,p.pt())
+			histos.nFsrJets.fill(eventweight,1)
+		
 		plotSlot = []
 		
+	
 		# example of how to use the additional plot slot:
 		#plotSlot.append( (motherParticles[1],"A0A0A0") )
 		
@@ -378,41 +400,11 @@ class ExtractHistos(object):
 		#for p in hardMEFermionChainParticles:
 			#print GetParticleName(p.pdgId()) + " [" + str(p.status())+ "]"
 			#plotSlot.append( (p,"A0A0A0") )
-			
-		print "fsrJetParticlesPS=" + str(len(fsrJetParticlesPS))
-		
-		testList = []
-		testSet = Set()
-		testSetN = Set()
-		testSetN.add(1)
-		testSetN.add(1)
-		
-		for p in fsrJetParticlesPS:
-			testList.append(p)
-			testSet.add(p)
-			testSet.add(p)
-			print GetParticleName(p.pdgId()) + " [" + str(p.status())+ "]" + " (" + GetPointer(p) + ")"
-			#print str(fsrJetParticlesPS[0] == fsrJetParticlesPS[1])
-			plotSlot.append( (p,"FF00FF") )
-				
-		print str(testList[0] == testList[1])
-		
-		print "TestSet:"
-		
-		for p in testSet:
-			print GetParticleName(p.pdgId()) + " [" + str(p.status())+ "]" + " (" + GetPointer(p) + ")" + " {" + str(hash(p)) + "}"
-			
-			
-		print "TestSetN:"
-		
-		for p in testSetN:
-			print str(p)
-		
-		
-		
+					
 		if self.runParams.useVisualization and currentCutIndex == 0:
 			fileName = "event" + str(currentEventIndex);
 			visual.GraphViz(fileName, motherParticles, self.runParams, (isrJetParticles, (fsrJetParticlesME,fsrJetParticlesPS)), specialParticles, plotSlot)
+	
 	
 	def run(self, runParams):
 		self.runParams = runParams

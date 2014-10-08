@@ -99,9 +99,10 @@ def ScaleEnergy(energy,scaleMax,factor):
 	return min(scaleMax,factor*energy)
 	
 def scaleToRgb(scale):
+	#print scale
 	if scale <= 1:
-		c = scale
-		return 0,0,c
+		c = max(0,scale)
+		return 0,0,0.5+c/2
 	if scale <= 2: 
 		c = scale-1
 		return 0,c,(1-c)
@@ -129,7 +130,10 @@ def RgbToString(rgb):
 	return ratioToHexChannel(rgb[0]) + ratioToHexChannel(rgb[1]) +ratioToHexChannel(rgb[2])
 	
 def CreateColorFromEnergy(energy):
-	scale = ScaleEnergy(math.log(energy),5,0.55)
+	if energy > 0:
+		scale = ScaleEnergy(math.log(energy),5,0.55)
+	else:
+		scale = 0
 	rgb = scaleToRgb(scale)
 	return RgbToString(rgb)
 	
@@ -144,6 +148,9 @@ def GetPointer(p):
 def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot, isWDaughter=False,  isBDaughter=False,  isHDaughter=False):
 
 	if p.p4().energy() < runParams.visualizationEnergyCutoff:
+		return
+	
+	if p.pt() < runParams.visualizationPtCutoff:
 		return
 	
 	pPtr = GetPointer(p)
@@ -209,10 +216,14 @@ def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, 
 	if usedPlotSlot:
 		usedPlotSlot = True # nops in python?!
 	elif runParams.visualizationEnergyMode:
-		
 		colorString = "black"
 		textColorString = "black"
 		fillColorString='"#'+CreateColorFromEnergy(p.energy())+'"'
+		styleString = ", style=filled"
+	elif runParams.visualizationPtMode:
+		colorString = "black"
+		textColorString = "black"
+		fillColorString='"#'+CreateColorFromEnergy(p.pt()*5)+'"'
 		styleString = ", style=filled"
 		
 	else:

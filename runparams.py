@@ -5,11 +5,13 @@ class RunParams(object):
 		self.outputFile = "output-extracted.root"
 		self.useVisualization = False
 		self.visualizationEnergyCutoff = -1
+		self.visualizationPtCutoff = -1
 		self.visualizationShowUnderlyingEvent = True
 		self.visualizationShowMainInteraction = True
 		self.visualizationColorSpecialJets = False
 		self.visualizationRenderer = "dot"
 		self.visualizationEnergyMode = False
+		self.visualizationPtMode = False
 		self.maxEvents = -1
 		self.useDebugOutput = False
 		self.etaCut = 2.5
