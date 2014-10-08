@@ -46,7 +46,7 @@ def GetSpecialBranches(referenceParticles):
 			
 	return mainInteractionBranches, underlyingEventBranches
 
-def GraphViz(fileName, referenceParticles,  runParams, isrFsr, specialParticles):
+def GraphViz(fileName, referenceParticles,  runParams, isrFsr, specialParticles, plotSlot):
 	diFileName = fileName + ".di"
 	pngFileName = fileName + ".png"
 	
@@ -64,8 +64,8 @@ def GraphViz(fileName, referenceParticles,  runParams, isrFsr, specialParticles)
 	particleSet = Set()
 	particleConnectionSet = Set()
 		
-	RecurseParticle(f, referenceParticles[0], 0, "", 0,  particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles)
-	RecurseParticle(f, referenceParticles[1], 0, "", 0,  particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles)
+	RecurseParticle(f, referenceParticles[0], 0, "", 0,  particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot)
+	RecurseParticle(f, referenceParticles[1], 0, "", 0,  particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot)
 	
 	f.write("}\n")
 	f.close()
@@ -131,23 +131,7 @@ def RgbToString(rgb):
 def CreateColorFromEnergy(energy):
 	scale = ScaleEnergy(math.log(energy),5,0.55)
 	rgb = scaleToRgb(scale)
-	rgbString = RgbToString(rgb)
-	#print "energy: " + str(energy) + " scale: " + str(scale) + "RGB=" + rgbString
-	
-	#h = hex(int(energy/2)%256)[2:]
-	#r = hex(int(energy/4)%256)[2:]
-	#if len(h) == 1:
-		#h =  "0" + h
-	#if len(r) == 1:
-		#r =  "0" + r
-	#if r == "00":
-		#result = "0000" + h
-	#else:
-		#result = r + "0000"
-	 
-	result = rgbString
-	 
-	return result
+	return RgbToString(rgb)
 	
 def GetPointer(p):
 	strP = str(p)
@@ -157,32 +141,21 @@ def GetPointer(p):
 	return particleIdentifier[:indexL]
 
 	
-def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, isWDaughter=False,  isBDaughter=False,  isHDaughter=False):
+def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot, isWDaughter=False,  isBDaughter=False,  isHDaughter=False):
 
 	if p.p4().energy() < runParams.visualizationEnergyCutoff:
 		return
 	
 	pPtr = GetPointer(p)
-	
 	duplicateParticle = pPtr in particleSet
-		
-	#print GetParticleName(p.pdgId()) + " [" + str(p.status()) + "]",
-	#print "0x" + GetPointer(p),
-	#print ": size: " + str(len(particleSet)),
 	particleSet.add(pPtr)
-	#print "->" + str(len(particleSet)) 
-
 	
 	if mainInteractionInfo.useMainInteractionInfo:
 		if not runParams.visualizationShowUnderlyingEvent:
-			#print "vue1"
 			if p in mainInteractionInfo.underlyingEventBranches:
-				#print GetParticleName( p.pdgId() ) + "[" + str(p.status()) +"]:vue->trigger"
 				return
 		if not runParams.visualizationShowMainInteraction:
-			#print "vmi1"
 			if p in mainInteractionInfo.mainInteractionBranches:
-				#print GetParticleName( p.pdgId() ) + "[" + str(p.status()) +"]:vmi->trigger"
 				return
 	
 	particleName = GetParticleName( p.pdgId() )
@@ -190,9 +163,7 @@ def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, 
 	
 	typeString = str(cs)
 	colorString = "black"
-	
 	textColorString = "black"
-	
 	fillColorString = "white"
 	styleString = ""
 	
@@ -220,14 +191,24 @@ def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, 
 	#elif 71 <= cs <= 79:
 		#fillColorString="gray"
 		#styleString = ", style=filled"
-	#Ws, Bs, Hs
+	
 	particleIdentifier = pPtr
 	particleLabel = particleName
 	particleLabelFinal = particleLabel + "[" + typeString + "]"
 
-	#print "runParams.visualizationColorSpecialJets=" + str(runParams.visualizationColorSpecialJets)	
+	usedPlotSlot = False
+	for ps in plotSlot:
+		if pPtr == GetPointer(ps[0]):
+			colorString = "black"
+			textColorString = "black"
+			fillColorString='"#'+ps[1]+'"'
+			styleString = ", style=filled"
+			usedPlotSlot = True
+			break
 
-	if runParams.visualizationEnergyMode:
+	if usedPlotSlot:
+		usedPlotSlot = True # nops in python?!
+	elif runParams.visualizationEnergyMode:
 		
 		colorString = "black"
 		textColorString = "black"
@@ -236,56 +217,60 @@ def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, 
 		
 	else:
 
-		if runParams.visualizationColorSpecialJets and (isWDaughter or isBDaughter or isHDaughter) :
+		isrFsrJetColored = False
+
+		for numJet, jet in enumerate(isrFsr[0]):
+			currentCandidate = GetPointer(jet)
+			if currentCandidate == pPtr:
+				#colorString = "green"
+				textColorString = "black"
+				fillColorString='"#00FF00"'
+				styleString = ", style=filled"
+				isrFsrJetColored = True
+					
+		for numJet, jet in enumerate(isrFsr[1][0]):
+			currentCandidate = GetPointer(jet)
+			if currentCandidate == pPtr:
+				#colorString = "blue"
+				textColorString = "black"
+				fillColorString='"#0000FF"'
+				styleString = ", style=filled"
+				isrFsrJetColored = True
+				
+		for numJet, jet in enumerate(isrFsr[1][1]):
+			currentCandidate = GetPointer(jet)
+			if currentCandidate == pPtr:
+				#colorString = "blue"
+				textColorString = "black"
+				fillColorString='"#00FFFF"'
+				styleString = ", style=filled"
+				isrFsrJetColored = True
+
+		if not isrFsrJetColored and runParams.visualizationColorSpecialJets and (isWDaughter or isBDaughter or isHDaughter) :
 			colorString = "black"
 			textColorString = "black"
 			if isWDaughter:
 				fillColorString = "red"
-				#particleLabelFinal = "<W>"
 			if isBDaughter:
 				fillColorString = "orange"
-				#particleLabelFinal = "<B>"
 			if isHDaughter:
 				fillColorString = "deeppink"
-				#particleLabelFinal = "<H>"
 			styleString = ", style=filled"
 		
-		else:
-			
-			if runParams.visualizationColorSpecialJets:
-				for w in specialParticles.Ws:
-					if GetPointer(p) == GetPointer(w):
-						isWDaughter = True
-						
-				for b in specialParticles.Bs:
-					if GetPointer(p) == GetPointer(b):
-						isBDaughter = True
+		if runParams.visualizationColorSpecialJets:
+			for w in specialParticles.Ws:
+				if GetPointer(p) == GetPointer(w):
+					isWDaughter = True
 					
-				for h in specialParticles.Hs:
-					if GetPointer(p) == GetPointer(h):
-						isHDaughter = True
-					
-			if not runParams.visualizationColorSpecialJets or not (isWDaughter or isBDaughter or isHDaughter):
+			for b in specialParticles.Bs:
+				if GetPointer(p) == GetPointer(b):
+					isBDaughter = True
+				
+			for h in specialParticles.Hs:
+				if GetPointer(p) == GetPointer(h):
+					isHDaughter = True
 	
-				for numJet, jet in enumerate(isrFsr[0]):
-					currentCandidate = GetPointer(jet)
-					if currentCandidate == pPtr:
-						#particleLabelFinal = str(numJet)
-						colorString = "red"
-						textColorString = "black"
-						#fillColorString='"#'+CreateColorFromParams("ISR",numJet)+'"'
-						fillColorString='"#00FFFF"'
-						styleString = ", style=filled"
-							
-				for numJet, jet in enumerate(isrFsr[1]):
-					currentCandidate = GetPointer(jet)
-					if currentCandidate == pPtr:
-						#particleLabelFinal = str(numJet)
-						colorString = "blue"
-						textColorString = "black"
-						#fillColorString='"#'+CreateColorFromParams("FSR",numJet)+'"'
-						fillColorString='"#0000FF"'
-						styleString = ", style=filled"
+
 	
 	attrib = styleString + ", color=" + colorString + ", fillcolor=" + fillColorString + ", fontcolor=" + textColorString
 		
@@ -298,19 +283,6 @@ def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, 
 			f.write(particleConnection)
 			particleConnectionSet.add(particleConnection)
 		
-	#n = p.numberOfMothers();
-	#for i in range(0,n):
-		#RecurseParticle(f, p.mother(i), rec + 1, particleIdentifier, i, particleSet, runParams, mainInteractionInfo, isrFsr, specialParticles, isWDaughter, isBDaughter, isHDaughter)
-		#f.write(GetPointer(p.mother(i)) + " -> " + particleIdentifier + ";\n")
-
-	#if n>1:
-		#print GetParticleName(p.pdgId()) + "[" + str(p.status()) + "] has " + str(n) + " mothers."
-		#for i in range(0,n):
-			#print GetParticleName(p.mother(i).pdgId()) + " [" + str(p.mother(i).status()) + "]"
-	
-	#if duplicateParticle:
-		#return
-	
 	n = p.numberOfDaughters();
 	for i in range(0,n):
-		RecurseParticle(f, p.daughter(i), rec + 1, particleIdentifier, i, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, isWDaughter, isBDaughter, isHDaughter)
+		RecurseParticle(f, p.daughter(i), rec + 1, particleIdentifier, i, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot, isWDaughter, isBDaughter, isHDaughter)

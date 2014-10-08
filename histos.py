@@ -105,4 +105,3 @@ class Histos(object):
 		self.nIsrJets.finalize()
 		self.nFsrJets.finalize()
 		
-		del self
