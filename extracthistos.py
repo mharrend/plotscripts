@@ -83,42 +83,44 @@ class ExtractHistos(object):
 		histos.nIsrJets.fill(eventweight,min(15,nISRJets))
 		histos.nFsrJets.fill(eventweight,min(15,nFSRJets))
 		
-	def findSpecialHardParticles(self, referenceParticle, Ws = [], Bs = [], Hs = [], hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
-		if referenceParticle is not None:
-			for cParticle in referenceParticle:
-				cStatus = cParticle.status()
-				
-				thisIsTop = False
-				thisIsW = False
-				thisIsB = False
-				thisIsH = False
-				
-				if 21 <= cStatus <= 29:
-					absPdgId = abs(cParticle.pdgId())
-					if absPdgId == 6:
-						thisIsTop = True
-					if absPdgId == 24:
-						thisIsW = True
-						if hasSeenT and not hasSeenW:
-							Ws.append(cParticle)
-							continue
-					if absPdgId == 5:
-						thisIsB = True
-						if hasSeenT and not hasSeenB:
-							Bs.append(cParticle)
-							continue
-					if absPdgId == 25:
-						thisIsH = True
-						Hs.append(cParticle)
+	def findSpecialHardParticles(self, firstHardParticle, Ws = [], Bs = [], Hs = [], hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
+		for cParticle in firstHardParticle:
+			cStatus = cParticle.status()
+			
+			thisIsTop = False
+			thisIsW = False
+			thisIsB = False
+			thisIsH = False
+			
+			if 21 <= cStatus <= 29:
+				absPdgId = abs(cParticle.pdgId())
+				if absPdgId == 6:
+					thisIsTop = True
+				if absPdgId == 24:
+					thisIsW = True
+					if hasSeenT and not hasSeenW:
+						Ws.append(cParticle)
 						continue
-				self.findSpecialHardParticles(cParticle,Ws,Bs,Hs,hasSeenT or thisIsTop, hasSeenW or thisIsW , hasSeenB or thisIsB ,hasSeenH or thisIsH )
+				if absPdgId == 5:
+					thisIsB = True
+					if hasSeenT and not hasSeenB:
+						Bs.append(cParticle)
+						continue
+				if absPdgId == 25:
+					thisIsH = True
+					Hs.append(cParticle)
+					continue
+			self.findSpecialHardParticles(firstHardParticle,Ws,Bs,Hs,hasSeenT or thisIsTop, hasSeenW or thisIsW , hasSeenB or thisIsB ,hasSeenH or thisIsH )
 		return Ws, Bs, Hs 
 		
-	def findAndPlotSpecialHardParticles(self,histos, eventweight, referenceParticle):
+	def findAndPlotSpecialHardParticles(self,histos, eventweight, firstHardParticles):
 		Ws = []
 		Bs = []
 		Hs = []
-		Ws, Bs, Hs = self.findSpecialHardParticles(referenceParticle, Ws, Bs, Hs)
+		for firstHard in firstHardParticles:
+			Ws, Bs, Hs = self.findSpecialHardParticles(firstHard, Ws, Bs, Hs)
+			break
+		
 		nLeptonicWDecays = 0
 		nHadronicWDecays = 0
 		
@@ -296,7 +298,7 @@ class ExtractHistos(object):
 					continue
 				fsrJetParticlesPS.add(d)
 
-	def findAndPlotFsrIsr(self,histos,eventweight,genParticlesProduct,motherParticles,fsrIsrParticles):
+	def findAndPlotFsrIsr(self,histos,eventweight,genParticlesProduct,motherParticles,firstHardParticles,fsrIsrParticles):
 		firstHardParticles = Set()
 		self.findFirstHardParticles(motherParticles[0],firstHardParticles)
 		#self.findFirstHardParticles(motherParticles[1],firstHardParticles)
@@ -355,7 +357,6 @@ class ExtractHistos(object):
 			
 		motherParticles = self.getMotherParticles(genParticlesProduct)
 		self.plotGenJets(histos,currentCut,eventweight,genJetsProduct)
-		specialParticles = self.findAndPlotSpecialHardParticles(histos,eventweight,motherParticles[0])
 
 		#print "Debug:"
 		
@@ -384,7 +385,11 @@ class ExtractHistos(object):
 		#print "EqCheck: " + str( p == motherOfDaughter)
 
 		fsrIsrParticles = []
-		self.findAndPlotFsrIsr(histos,eventweight,genParticlesProduct,motherParticles,fsrIsrParticles)
+		firstHardParticles = Set()
+		self.findAndPlotFsrIsr(histos,eventweight,genParticlesProduct,motherParticles,firstHardParticles,fsrIsrParticles)
+		
+		specialParticles = self.findAndPlotSpecialHardParticles(histos,eventweight,firstHardParticles)
+
 		
 		plotSlot = []
 	

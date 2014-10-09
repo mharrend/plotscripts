@@ -29,8 +29,8 @@ class Histogram(object):
 		#print str(self.pos)
 		#print str(self.neg)
 		#print str(self.combined)
-		if not self.check("fill"):
-			return
+		#if not self.check("fill"):
+		#	return
 		
 		if weight >0:
 			self.pos.Fill(value,1.)
