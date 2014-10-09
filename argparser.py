@@ -49,6 +49,7 @@ class ArgParser(object):
 	    print " -vni | --visualize-no-main-interaction:  Do not visualize the main interaction"
 	    print " -vsj | --visualize-color-special-jets:   Color special particle jets"
 	    print " -vce | --visualize-cutoff-energy:        Specify Visualization energy cutoff (double)"
+	    print " -vcs | --visualize-cutoff-special-jets:  Cutoff Special Jets"
 	    print " -vcr | --visualize-cutoff-radiation:     Cutoff ISR/FSR Jets"
 	    print " -vme | --visualize-mode-energy:          Color particles by their energy"
 	    print " -vmp | --visualize-mode-pt:              Color particles by their pT"
@@ -154,7 +155,10 @@ class ArgParser(object):
 		if ( arg == "-vcr" ) or ( arg == "--visualize-cutoff-radiation" )  :
 		    self.runParams.visualizationCutoffRadiation = True
 		    continue
-
+		
+		if ( arg == "-vcs" ) or ( arg == "--visualize-cutoff-special-jets" )  :
+		    self.runParams.visualizationCutSpecialJets = True
+		    continue
 		
 		#if ( arg == "-vp" ) or ( arg == "--visualize-pt-cutoff" )  :
 		    #if nextArg is None or nextArg[0] == '-':

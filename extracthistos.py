@@ -184,15 +184,46 @@ class ExtractHistos(object):
 	def getMotherParticles(self, genParticlesProduct):
 		return genParticlesProduct[0], genParticlesProduct[1]
 
-	def findFirstHardParticles(self,referenceParticle, currentList):
+	def findFirstHardParticles(self,p, currentList):
 		
-		if 20 <= referenceParticle.status() <= 29:
-			currentList.add(referenceParticle)
-			return
+		cs = p.status()
 		
-		for cParticle in referenceParticle:
-			self.findFirstHardParticles(cParticle, currentList)
-		return	
+		#print "FHP: " + ParticleGetInfo(p)
+		
+		if 20 <= cs <= 29:
+			#print " [HARD]"
+			for d in p:
+				nMothers = d.numberOfMothers()
+				for i in range(0,nMothers):
+					currentList.add(d.mother(i))
+			return True
+				
+		# discard outgoing iss
+		if cs == 43 or cs == 44:
+			#print " [DISCARD4x]"
+			return False
+		
+		# discard outgoing fss
+		if cs == 51 or cs == 52:
+			#print " [DISCARD5x]"
+			return False
+		
+		# discard outgoing beam remnant
+		if cs == 62 or cs == 63:
+			#print " [DISCARD6x]"
+			return False
+		
+		# discard hadronization process particles
+		if 70 <= cs <= 79:
+			#print " [DISCARD7x]"
+			return False
+				
+		#print " [Search Children]"
+				
+		for d in p:
+			if self.findFirstHardParticles(d, currentList):
+				return True
+		return False
 		
 	def findMainInteractionChainParticles(self,particles, mainInteractionChainParticles, rec = 0):
 		for p in particles:
@@ -244,7 +275,7 @@ class ExtractHistos(object):
 		hardFermionStatus = hardFermion.status()
 		hardFermionPdgId = hardFermion.pdgId()
 		for d in hardFermion:
-			if d.pdgId() <> hardFermionPdgId or d in fsrJetParticlesME:
+			if d.pdgId() <> hardFermionPdgId or hardFermion in fsrJetParticlesME:
 				continue
 
 			hardMEFermionChainParticles.add(hardFermion)
@@ -268,7 +299,7 @@ class ExtractHistos(object):
 	def findAndPlotFsrIsr(self,histos,eventweight,genParticlesProduct,motherParticles,fsrIsrParticles):
 		firstHardParticles = Set()
 		self.findFirstHardParticles(motherParticles[0],firstHardParticles)
-		self.findFirstHardParticles(motherParticles[1],firstHardParticles)
+		#self.findFirstHardParticles(motherParticles[1],firstHardParticles)
 		mainInteractionChainParticles = Set()
 		self.findMainInteractionChainParticles(firstHardParticles,mainInteractionChainParticles)
 		isrJetParticles = Set()

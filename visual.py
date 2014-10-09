@@ -146,12 +146,7 @@ def GraphVizRecurseParticle(diFile, p, rec, lastParticleIdentifier, particleSet,
 	
 	if p.p4().energy() < runParams.visualizationEnergyCutoff:
 		cutThis = True
-		#return
-	
-	#if p.pt() < runParams.visualizationPtCutoff:
-		#cutThis = True
-		##return
-	
+
 	pPtr = ParticleGetPointer(p)
 	duplicateParticle = pPtr in particleSet
 	particleSet.add(pPtr)
@@ -167,9 +162,10 @@ def GraphVizRecurseParticle(diFile, p, rec, lastParticleIdentifier, particleSet,
 	skipThis = False
 	
 	if runParams.visualizationSkipCopies:
-		if p.numberOfDaughters() == 1:
-			skipThis = True
-
+		if p.numberOfDaughters() == 1 and p.numberOfMothers() == 1:
+			if p.pdgId() == p.daughter(0).pdgId() and p.pdgId() == p.mother(0).pdgId():
+				if p.mother(0).numberOfDaughters() == 1:
+					skipThis = True
 	
 	cs = abs(p.status())
 	
@@ -283,17 +279,20 @@ def GraphVizRecurseParticle(diFile, p, rec, lastParticleIdentifier, particleSet,
 		for w in specialParticles.Ws:
 			if ParticleGetPointer(p) == ParticleGetPointer(w):
 				isWDaughter = True
+				cutThis = runParams.visualizationCutSpecialJets
 				
 		for b in specialParticles.Bs:
 			if ParticleGetPointer(p) == ParticleGetPointer(b):
 				isBDaughter = True
+				cutThis = runParams.visualizationCutSpecialJets
 			
 		for h in specialParticles.Hs:
 			if ParticleGetPointer(p) == ParticleGetPointer(h):
 				isHDaughter = True
+				cutThis = runParams.visualizationCutSpecialJets
 
 	attrib = styleString + ", color=" + colorString + ", fillcolor=" + fillColorString + ", fontcolor=" + textColorString
-		
+			
 	if not skipThis:
 		
 		diFile.write(particleIdentifier + "[label=\"" + particleLabelFinal + "\"" + attrib + "];\n")
