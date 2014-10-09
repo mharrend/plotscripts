@@ -68,8 +68,8 @@ class Histos(object):
 		#self.uEventPt = Histogram(outputFileObject, "HueventPt"+currentCutString, "pT of underlying Event "+currentCutString,100,0,300)
 		#self.uEventE = Histogram(outputFileObject, "HueventE"+currentCutString, "Energy of underlying Event "+currentCutString,100,0,300)
 		
-		self.particlePt = Histogram(outputFileObject, "HparticlePt"+currentCutString, "pT of particles "+currentCutString,100,0,300)
-		self.particleE = Histogram(outputFileObject, "HparticleE"+currentCutString, "Energy of particles "+currentCutString,100,0,300)
+		self.particlePt = Histogram(outputFileObject, "HparticlePt"+currentCutString, "pT of particles "+currentCutString,1000,0,100)
+		self.particleE = Histogram(outputFileObject, "HparticleE"+currentCutString, "Energy of particles "+currentCutString,1000,0,300)
 			
 	def finalize (self):
 		self.njets.finalize()

@@ -10,7 +10,6 @@ from collections import namedtuple
 import time
 
 import ROOT
-#from ROOT import TH1F, TFile, TTree, TString, gSystem
 from sets import Set
 
 # sibling modules
@@ -39,16 +38,6 @@ def InitializeFWLite():
 	IsInitialized = True
 
 class ExtractHistos(object):
-		
-	def getAllRelevantDaughters(self, referenceParticle, referenceJets, currentList):
-		
-		if referenceParticle.status() < 10:
-			currentList.append(referenceParticle)
-			return
-		
-		for cParticle in referenceParticle:
-			self.getAllRelevantDaughters(cParticle,referenceJets, currentList)
-		return
 		
 	def WGetDecayType(self, referenceParticle):
 			
@@ -130,21 +119,10 @@ class ExtractHistos(object):
 		nLeptonicWDecays = 0
 		nHadronicWDecays = 0
 		
-		#histos.W_Pt.check("findSpecialHardParticles post")
-		
 		for idx,w in enumerate(Ws):
-			#print "W_Pt->",
-			
-			#histos.W_Pt.check("enumerate(Ws) " + str(idx))
-			
 			histos.W_Pt.fill(eventweight,w.pt())
 			histos.W_M.fill(eventweight,w.p4().M())
 			histos.W_E.fill(eventweight,w.energy())
-			#print "ok"
-			#W_E.fill(eventweight,w.deltaR())
-			
-			#histos.W_Pt.check("enumerate(Ws) " + str(idx) + " B")
-			
 			WDecay = self.WGetDecayType(w)
 			isLeptonic = WDecay[0]
 			WReferenceparticle = WDecay[1]
@@ -287,15 +265,12 @@ class ExtractHistos(object):
 				
 				found = False
 				for fsr in fsrJetParticlesME:
-					#print "FSR check: " + GetParticleInfo(fsr) + " == " +  GetParticleInfo(hardFermion)
 					if hardFermionPtr == ParticleGetPointer(fsr):		
-						#print "FSR [HIT]: " + GetParticleInfo(fsr)
 						found = True
 						break
 				if found:
 					continue
 
-				#print "hardFermion added: " + GetParticleInfo(hardFermion)
 				hardMEFermionChainParticles.add(hardFermion)
 				self.findhardMEFermionChainParticlesFromFermion(d,fsrJetParticlesME,hardMEFermionChainParticles)
 				return
@@ -342,23 +317,23 @@ class ExtractHistos(object):
 		for p in isrJetParticles:
 			histos.isrjetenergy.fill(eventweight,p.energy())
 			histos.isrjetpt.fill(eventweight,p.pt())
-			histos.nIsrJets.fill(eventweight,1)
+		histos.nIsrJets.fill(eventweight,len(isrJetParticles))
 			
 		for p in fsrJetParticlesME:
 			histos.fsrjetenergyME.fill(eventweight,p.energy())
 			histos.fsrjetptME.fill(eventweight,p.pt())
-			histos.nFsrJetsME.fill(eventweight,1)
 			histos.fsrjetenergy.fill(eventweight,p.energy())
 			histos.fsrjetpt.fill(eventweight,p.pt())
-			histos.nFsrJets.fill(eventweight,1)
+		histos.nFsrJetsME.fill(eventweight,len(fsrJetParticlesME))
 			
 		for p in fsrJetParticlesPS:
 			histos.fsrjetenergyPS.fill(eventweight,p.energy())
 			histos.fsrjetptPS.fill(eventweight,p.pt())
-			histos.nFsrJetsPS.fill(eventweight,1)
 			histos.fsrjetenergy.fill(eventweight,p.energy())
 			histos.fsrjetpt.fill(eventweight,p.pt())
-			histos.nFsrJets.fill(eventweight,1)
+		histos.nFsrJetsPS.fill(eventweight,len(fsrJetParticlesPS))
+		
+		histos.nFsrJets.fill(eventweight,len(fsrJetParticlesPS)+len(fsrJetParticlesME))
 		
 		# particle Energy
 		for p in genParticlesProduct:
@@ -455,7 +430,6 @@ class ExtractHistos(object):
 				
 			endTime = time.time()
 			totalTime = endTime - startTime
-			#print "histos.finalize"
 			histos.finalize()
 			del histos
 			

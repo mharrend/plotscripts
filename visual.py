@@ -50,9 +50,9 @@ def GraphViz(fileName, referenceParticles,  runParams, isrFsr, specialParticles,
 	diFileName = fileName + ".di"
 	pngFileName = fileName + ".png"
 	
-	f = open(diFileName , 'w')
-	f.write("digraph G {\n")
-	f.write("graph [nodesep=0.01]\n") 
+	diFile = open(diFileName , 'w')
+	diFile.write("digraph G {\n")
+	diFile.write("graph [nodesep=0.01]\n") 
 	
 	mainInteractionInfo = namedtuple('mainInteractionInfo', 'useMainInteractionInfo referenceParticles mainInteractionBranches underlyingEventBranches')
 	mainInteractionInfo.useMainInteractionInfo = not runParams.visualizationShowUnderlyingEvent or not runParams.visualizationShowMainInteraction
@@ -63,12 +63,15 @@ def GraphViz(fileName, referenceParticles,  runParams, isrFsr, specialParticles,
 		
 	particleSet = Set()
 	particleConnectionSet = Set()
-		
-	RecurseParticle(f, referenceParticles[0], 0, "", 0,  particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot)
-	RecurseParticle(f, referenceParticles[1], 0, "", 0,  particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot)
 	
-	f.write("}\n")
-	f.close()
+	lastParticleIdentifier = ""
+	startingRecursionLevel = 0
+		
+	GraphVizRecurseParticle(diFile, referenceParticles[0], startingRecursionLevel, lastParticleIdentifier, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot)
+	GraphVizRecurseParticle(diFile, referenceParticles[1], startingRecursionLevel, lastParticleIdentifier, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot)
+	
+	diFile.write("}\n")
+	diFile.close()
 	
 	GraphVizCreate (runParams, diFileName, pngFileName )
 
@@ -137,7 +140,7 @@ def CreateColorFromEnergy(energy):
 	rgb = scaleToRgb(scale)
 	return RgbToString(rgb)
 	
-def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot, isWDaughter=False,  isBDaughter=False,  isHDaughter=False):
+def GraphVizRecurseParticle(diFile, p, rec, lastParticleIdentifier, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot, isWDaughter=False,  isBDaughter=False,  isHDaughter=False):
 
 	cutThis = False
 	
@@ -293,12 +296,12 @@ def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, 
 		
 	if not skipThis:
 		
-		f.write(particleIdentifier + "[label=\"" + particleLabelFinal + "\"" + attrib + "];\n")
+		diFile.write(particleIdentifier + "[label=\"" + particleLabelFinal + "\"" + attrib + "];\n")
 		
-		if last <> "":
-			particleConnection = last + " -> " + particleIdentifier + ";\n"
+		if lastParticleIdentifier <> "":
+			particleConnection = lastParticleIdentifier + " -> " + particleIdentifier + ";\n"
 			if particleConnection not in particleConnectionSet:
-				f.write(particleConnection)
+				diFile.write(particleConnection)
 				particleConnectionSet.add(particleConnection)
 		
 	if cutThis:
@@ -307,7 +310,7 @@ def RecurseParticle(f, p, rec, last, index, particleSet, particleConnectionSet, 
 	n = p.numberOfDaughters();
 	for i in range(0,n):
 		if not skipThis:
-			RecurseParticle(f, p.daughter(i), rec + 1, particleIdentifier, i, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot, isWDaughter, isBDaughter, isHDaughter)
+			GraphVizRecurseParticle(diFile, p.daughter(i), rec + 1, particleIdentifier, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot, isWDaughter, isBDaughter, isHDaughter)
 		else:
-			RecurseParticle(f, p.daughter(i), rec + 1, last, i, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot, isWDaughter, isBDaughter, isHDaughter)
+			GraphVizRecurseParticle(diFile, p.daughter(i), rec + 1, lastParticleIdentifier, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot, isWDaughter, isBDaughter, isHDaughter)
 
