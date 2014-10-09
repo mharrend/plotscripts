@@ -44,6 +44,7 @@ class ArgParser(object):
 	    print " -o   | --output:                         Set output file (string)"
 	    print " -p   | --ptcuts:                         Set pTcuts (list of doubles seperated by ',')"
 	    print " -v   | --visualize:                      Create visualization(s)"
+	    print " -vs  | --visualize-skip-copies:          Do not render non-physical particle copies"
 	    print " -vnu | --visualize-no-underlying-event:  Do not visualize the underlying event"
 	    print " -vni | --visualize-no-main-interaction:  Do not visualize the main interaction"
 	    print " -vsj | --visualize-color-special-jets:   Color special particle jets"
@@ -117,6 +118,10 @@ class ArgParser(object):
 		    continue
 		if ( arg == "-v" ) or ( arg == "--visualize" )  :
 		    self.runParams.useVisualization = True
+		    continue
+		
+		if ( arg == "-vs" ) or ( arg == "--visualize-skip-copies" )  :
+		    self.runParams.visualizationSkipCopies = True
 		    continue
 		
 		if ( arg == "-vnu" ) or ( arg == "--visualize-no-underlying-event" )  :

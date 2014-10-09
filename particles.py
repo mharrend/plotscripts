@@ -26,7 +26,7 @@ PARTICLE = { 1 : "d",
 	}
 
 # Get human readable particle name by PdgId
-def GetParticleName(pdgId):
+def ParticleGetName(pdgId):
 	try:
 		if pdgId < 0:
 			return "-" + PARTICLE[-pdgId]
@@ -34,3 +34,16 @@ def GetParticleName(pdgId):
 			return PARTICLE[pdgId]
 	except KeyError:
 		return str(pdgId)
+	
+def ParticleGetPointer(p):
+	strP = str(p)
+	indexF = strP.find('0x')+2
+	particleIdentifier = strP[indexF:]
+	indexL = particleIdentifier.find('>')
+	return particleIdentifier[:indexL]
+
+def ParticleGetLabel(p):
+	return ParticleGetName(p.pdgId()) + " [" + str(p.status()) + "]"
+
+def ParticleGetInfo(p):
+	return ParticleGetName(p) + " (0x" + GetPointer(p) + ")"

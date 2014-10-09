@@ -13,6 +13,7 @@ class RunParams(object):
 		self.visualizationRenderer = "dot"
 		self.visualizationEnergyMode = False
 		self.visualizationPtMode = False
+		self.visualizationSkipCopies = False
 		self.maxEvents = -1
 		self.useDebugOutput = False
 		self.etaCut = 2.5
