@@ -12,6 +12,9 @@ import time
 import ROOT
 from sets import Set
 
+import cProfile
+import re
+
 # sibling modules
 import visual
 from particles import *
@@ -204,33 +207,14 @@ class ExtractHistos(object):
 	def findIsrJetParticles(self,mainInteractionChainParticles,firstHardParticles,motherParticles,isrJetParticles):
 		for mic in mainInteractionChainParticles:
 			
-			micPtr = ParticleGetPointer(mic)
-			
-			if micPtr == ParticleGetPointer(motherParticles[0]):
+			if mic == motherParticles[0] or mic == motherParticles[1] or mic in firstHardParticles:
 				continue
-			if micPtr == ParticleGetPointer(motherParticles[1]):
-				continue
-			
-			for fhp in firstHardParticles:
-				if micPtr == ParticleGetPointer(fhp):
-					continue
 				
-			for d in mic:
+			for dMic in mic:
 				found = False
-				dPtr = ParticleGetPointer(d) 
-				for fhp in firstHardParticles:
-					if dPtr == ParticleGetPointer(fhp):
-						found = True
-						break
-				if found:
+				if dMic in firstHardParticles or dMic in mainInteractionChainParticles:
 					continue
-				for mic2 in mainInteractionChainParticles:
-					if dPtr == ParticleGetPointer(mic2):
-						found = True
-						break
-				if found:
-					continue
-				isrJetParticles.add(d)
+				isrJetParticles.add(dMic)
 				
 	def findFsrJetParticlesME(self,genParticlesProduct,fsrJetParticlesME):
 		for p in genParticlesProduct:
@@ -260,20 +244,12 @@ class ExtractHistos(object):
 		hardFermionStatus = hardFermion.status()
 		hardFermionPdgId = hardFermion.pdgId()
 		for d in hardFermion:
-			hardFermionPtr = ParticleGetPointer(hardFermion)
-			if d.pdgId() == hardFermionPdgId:
-				
-				found = False
-				for fsr in fsrJetParticlesME:
-					if hardFermionPtr == ParticleGetPointer(fsr):		
-						found = True
-						break
-				if found:
-					continue
+			if d.pdgId() <> hardFermionPdgId or d in fsrJetParticlesME:
+				continue
 
-				hardMEFermionChainParticles.add(hardFermion)
-				self.findhardMEFermionChainParticlesFromFermion(d,fsrJetParticlesME,hardMEFermionChainParticles)
-				return
+			hardMEFermionChainParticles.add(hardFermion)
+			self.findhardMEFermionChainParticlesFromFermion(d,fsrJetParticlesME,hardMEFermionChainParticles)
+			return
 	
 	def findhardMEFermionChainParticles(self, hardMEFermions, fsrJetParticlesME, hardMEFermionChainParticles):
 		for hf in hardMEFermions:
@@ -285,14 +261,8 @@ class ExtractHistos(object):
 			for d in hic:
 				if hicPdgId == d.pdgId():
 					continue
-				dPtr = ParticleGetPointer(d)
-				found = False
-				for hic2 in hardMEFermionChainParticles:
-					if dPtr == ParticleGetPointer(hic2):
-						found = True
-						break
-					if found:
-						continue
+				if d in hardMEFermionChainParticles:
+					continue
 				fsrJetParticlesPS.add(d)
 
 	def findAndPlotFsrIsr(self,histos,eventweight,genParticlesProduct,motherParticles,fsrIsrParticles):
@@ -344,6 +314,7 @@ class ExtractHistos(object):
 		fsrIsrParticles.append( (fsrJetParticlesME,fsrJetParticlesPS) )
 
 	def processEvent(self,infoObj, genJetsObj, genParticlesObj, currentCut, currentCutIndex, currentEventIndex, currentEvent, histos):
+		
 		currentEvent.getByLabel (genJetsObj.label, genJetsObj.handle)
 		genJetsProduct = genJetsObj.handle.product()
 		currentEvent.getByLabel (infoObj.label, infoObj.handle)
@@ -354,6 +325,32 @@ class ExtractHistos(object):
 		motherParticles = self.getMotherParticles(genParticlesProduct)
 		self.plotGenJets(histos,currentCut,eventweight,genJetsProduct)
 		specialParticles = self.findAndPlotSpecialHardParticles(histos,eventweight,motherParticles[0])
+
+		#print "Debug:"
+		
+		#p = motherParticles[0]
+		
+		#print str(p)
+		
+		#print "p.__hash__()=" + str(p.__hash__())
+		#print "p info = " + ParticleGetInfo(p)
+		
+		#set = Set()
+		#set.add(p)
+		#daughter = p.daughter(0)
+		#motherOfDaughter=daughter.mother(0)
+		#set.add(motherOfDaughter)
+		
+		#print "motherOfDaughter.__hash__()=" + str(motherOfDaughter.__hash__())
+		#print "motherOfDaughter info = " + ParticleGetInfo(motherOfDaughter)
+		
+		#print "set size = " + str(len(set))
+		#for s in set:
+			#print " s.__hash__()=" + str(s.__hash__())
+			#print " s info = " + ParticleGetInfo(s)
+
+		#print "HashCheck: " + str(p.__hash__()) + " == " + str(motherOfDaughter.__hash__()) + " -> " + str( p.__hash__() == motherOfDaughter.__hash__())
+		#print "EqCheck: " + str( p == motherOfDaughter)
 
 		fsrIsrParticles = []
 		self.findAndPlotFsrIsr(histos,eventweight,genParticlesProduct,motherParticles,fsrIsrParticles)
@@ -371,7 +368,6 @@ class ExtractHistos(object):
 		if self.runParams.useVisualization and currentCutIndex == 0:
 			fileName = "event" + str(currentEventIndex);
 			visual.GraphViz(fileName, motherParticles, self.runParams, fsrIsrParticles, specialParticles, plotSlot)
-	
 	
 	def run(self, runParams):
 		self.runParams = runParams

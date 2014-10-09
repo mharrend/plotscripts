@@ -1,3 +1,14 @@
+import ROOT
+
+#ROOT.Math.LorentzVector('ROOT::Math::PxPyPzE4D<double>')()
+
+
+
+def Hash(self):
+	return 0
+
+ROOT.reco.GenParticle.__hash__ = Hash
+
 # Use human readable particle names for pdgIds according to 
 # http://pdg.lbl.gov/2014/reviews/rpp2014-rev-monte-carlo-numbering.pdf
 PARTICLE = { 1 : "d",
@@ -46,4 +57,4 @@ def ParticleGetLabel(p):
 	return ParticleGetName(p.pdgId()) + " [" + str(p.status()) + "]"
 
 def ParticleGetInfo(p):
-	return ParticleGetName(p) + " (0x" + GetPointer(p) + ")"
+	return ParticleGetLabel(p) + " (0x" + ParticleGetPointer(p) + ")"
