@@ -40,10 +40,18 @@ def InitializeFWLite():
 	
 	IsInitialized = True
 
+## write root plots and trigger event visualization
+#
+#In executable mode, this class is called by the main function.
+#In package mode, use can create your own instance of this class.
+#Use the run() method.
 class ExtractHistos(object):
-		
+
+	## determines the type of the W decay
+	#
+	#@param referenceParticle	(Reco Gen Particle) the W particle to be examined
+	#@return tuple ( (BOOL) TRUE if the decay is leptonic / FALSE otherwise, (Reco Gen Particle) last examined particle )
 	def WGetDecayType(self, referenceParticle):
-			
 		for cParticle in referenceParticle:
 			absPdgId = abs(cParticle.pdgId())
 			
@@ -53,7 +61,14 @@ class ExtractHistos(object):
 			
 		raise Exception("Invalid W Daughters in decay Search")
 		
+	## writes genGenInformation to extracted-root file
+	#
+	#@param histos		(object) Histogramm container
+	#@param currentCut	(int) currently examined pT-Cut
+	#@param eventweight	(double) weight of currently examined event
+	#@param genJetsProduct	(object) root container of Gen Jets
 	def plotGenJets(self, histos, currentCut, eventweight, genJetsProduct):
+
 		nJets = 0
 		firstJetpt = 0
 		secondJetpt = 0
@@ -83,6 +98,19 @@ class ExtractHistos(object):
 		histos.nIsrJets.fill(eventweight,min(15,nISRJets))
 		histos.nFsrJets.fill(eventweight,min(15,nFSRJets))
 		
+		
+	## finds the products of the hardest process
+	#
+	# Particles can be { Higgs (H), W-Boson (W), B-Quark (B) }
+	# This function is used recursively
+	#@param firstHardParticle	(Reco Gen Particle) The reactants of the hardest process 
+	#@param Ws			[OUT] (list[Reco Gen Particle]) found W particles
+	#@param Bs			[OUT] (list[Reco Gen Particle]) found B particles
+	#@param Hs			[OUT] (list[Reco Gen Particle]) found H particles
+	#@param hasSeenT		(bool) TRUE if this branch is child of a T, FALSE otherwise
+	#@param hasSeenW		(bool) TRUE if this branch is child of a W, FALSE otherwise
+	#@param hasSeenB		(bool) TRUE if this branch is child of a B, FALSE otherwise
+	#@param hasSeenH		(bool) TRUE if this branch is child of a H, FALSE otherwise
 	def findSpecialHardParticles(self, firstHardParticle, Ws = [], Bs = [], Hs = [], hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
 		for cParticle in firstHardParticle:
 			cStatus = cParticle.status()
@@ -113,6 +141,15 @@ class ExtractHistos(object):
 			self.findSpecialHardParticles(firstHardParticle,Ws,Bs,Hs,hasSeenT or thisIsTop, hasSeenW or thisIsW , hasSeenB or thisIsB ,hasSeenH or thisIsH )
 		return Ws, Bs, Hs 
 		
+		
+	## finds the products of the hardest process and write the result to the extracted-root files
+	#
+	#@param histos			(object) Histogramm container
+	#@param eventweight		(double) weight of currently examined event
+	#@param currentCut		(int) currently examined pT-Cut
+	#@param firstHardParticles	(list[Reco Gen Particle]) The reactants of the hardest process
+	#
+	#@return  specialParticles	(tuple (Ws,Bs,Hs)) lists of Reco Gen Particles
 	def findAndPlotSpecialHardParticles(self,histos, eventweight, firstHardParticles):
 		Ws = []
 		Bs = []
@@ -183,9 +220,20 @@ class ExtractHistos(object):
 		specialParticles.Hs = Hs
 		return specialParticles
 		
+		
+	## from genParticlesProduct, finds the two mother protons
+	#
+	#@param genParticlesProduct	(list[Reco Gen Particle]) the event's particles
+	#
+	#@return  (tuple (p0,p1))	(Reco Gen Particle) the two mother protons
 	def getMotherParticles(self, genParticlesProduct):
 		return genParticlesProduct[0], genParticlesProduct[1]
 
+	## finds reactants of hardest subprocess
+	#
+	#@param p	(Reco Gen Particle) starting particle (search is downwards)
+	#
+	#@return  (tuple (p0,p1))	(Reco Gen Particle) the two reactants of hardest subprocess
 	def findFirstHardParticles(self,p, currentList):
 		
 		cs = p.status()
@@ -218,6 +266,12 @@ class ExtractHistos(object):
 				return True
 		return False
 		
+	## finds all particles between the hardest sub process and the mothers
+	#
+	# This is later used to search for initial state radiation (ISR).
+	#@param particles			(list[Reco Gen Particle]) starting particles
+	#@param mainInteractionChainParticles	[OUT] (list[Reco Gen Particle]) result is written to this list
+	#@param rec				(int) level of recursion
 	def findMainInteractionChainParticles(self,particles, mainInteractionChainParticles, rec = 0):
 		for p in particles:
 			if rec > 0:
@@ -228,6 +282,13 @@ class ExtractHistos(object):
 				mothers.append(p.mother(i))
 			self.findMainInteractionChainParticles(mothers,mainInteractionChainParticles, rec + 1)
 		
+		
+	## finds all initial state radiation (ISR) jet mother particles
+	#
+	#@param mainInteractionChainParticles	(list[Reco Gen Particle]) all particles between the hardest sub process and the mothers
+	#@param firstHardParticles		(list[Reco Gen Particle]) The reactants of the hardest process
+	#@param motherParticles			(list[Reco Gen Particle]) The two protons
+	#@param isrJetParticles 		[OUT] (list[Reco Gen Particle]) all initial state radiation (ISR) jet mother particles
 	def findIsrJetParticles(self,mainInteractionChainParticles,firstHardParticles,motherParticles,isrJetParticles):
 		for mic in mainInteractionChainParticles:
 			
@@ -240,6 +301,10 @@ class ExtractHistos(object):
 					continue
 				isrJetParticles.add(dMic)
 				
+	## finds all final state radiation (FSR) jet mother particles coming from the matrix element (ME)
+	#
+	#@param genParticlesProduct	(list[Reco Gen Particle]) all event particles
+	#@param fsrJetParticlesME 	[OUT] (list[Reco Gen Particle]) all final state radiation (FSR) jet mother particles coming from the matrix element (ME)
 	def findFsrJetParticlesME(self,genParticlesProduct,fsrJetParticlesME):
 		for p in genParticlesProduct:
 			if p.status() == 23:
@@ -253,42 +318,72 @@ class ExtractHistos(object):
 				if found:
 					fsrJetParticlesME.add(p)
 				
+	## finds all particles with status id 21
+	#
+	#@param genParticlesProduct	(list[Reco Gen Particle]) all event particles
+	#@param incomingHardParticles 	[OUT] (list[Reco Gen Particle]) all particles with status id 21
 	def findIncomingHardParticles(self,genParticlesProduct, incomingHardParticles):
-		for p in genParticlesProduct:
+		for p in genParticlesPall event particlesroduct:
 			if p.status() == 21:
 				incomingHardParticles.add(p)
 				
-	def findhardMEFermions(self,incomingHardParticles, hardMEFermions):
+	## finds all hard matrix element mass particles
+	#
+	#@param incomingHardParticles		(list[Reco Gen Particle]) all particles with status id 21
+	#@param hardMEMassParticles 		[OUT] (lReco Gen Particle])))ist[Reco Gen Particle]) all hard matrix element mass particles
+	def findhardMEMassParticles(self,incomingHardParticles, hardMEMassParticles):
 		for p in incomingHardParticles:
 			for d in p:
 				if 22 <= d.status() <= 23 and d.pdgId() <> 21:
-					hardMEFermions.add(d)
+					hardMEMassParticles.add(d)
 				
-	def findhardMEFermionChainParticlesFromFermion(self, hardFermion, fsrJetParticlesME, hardMEFermionChainParticles):
-		hardFermionStatus = hardFermion.status()
-		hardFermionPdgId = hardFermion.pdgId()
-		for d in hardFermion:
-			if d.pdgId() <> hardFermionPdgId or hardFermion in fsrJetParticlesME:
+	## finds all particles between hard matrix element massParticles downwards until the next particle decay
+	#
+	#@param hardMassParticle			(list[Reco Gen Particle]) hard matrix element massParticles
+	#@param fsrJetParticlesME 			(list[Reco Gen Particle]) FSR Jet Particles from matrix element
+	#@param hardMEMassParticleChainParticles 	[OUT] (list[Reco Gen Particle]) all particles between hard matrix element mass particles downwards until the next particle decay
+	def findhardMEMassParticleChainParticlesFromMassParticle(self, hardMassParticle, fsrJetParticlesME, hardMEMassParticleChainParticles):
+		hardMassParticleStatus = hardMassParticle.status()
+		hardMassParticlePdgId = hardMassParticle.pdgId()
+		for d in hardMassParticle:
+			if d.pdgId() <> hardMassParticlePdgId or hardMassParticle in fsrJetParticlesME:
 				continue
 
-			hardMEFermionChainParticles.add(hardFermion)
-			self.findhardMEFermionChainParticlesFromFermion(d,fsrJetParticlesME,hardMEFermionChainParticles)
+			hardMEMassParticleChainParticles.add(hardMassParticle)
+			self.findhardMEMassParticleChainParticlesFromMassParticle(d,fsrJetParticlesME,hardMEMassParticleChainParticles)
 			return
 	
-	def findhardMEFermionChainParticles(self, hardMEFermions, fsrJetParticlesME, hardMEFermionChainParticles):
-		for hf in hardMEFermions:
-			self.findhardMEFermionChainParticlesFromFermion(hf,fsrJetParticlesME,hardMEFermionChainParticles)
+	## finds all particles between hard matrix element massParticles downwards until the next particle decay
+	#
+	#@param hardMEMassParticles			(list[Reco Gen Particle]) hard matrix element massParticles
+	#@param fsrJetParticlesME 			(list[Reco Gen Particle]) all final state radiation (FSR) jet mother particles coming from the matrix element (ME)
+	#@param hardMEMassParticleChainParticles 	[OUT] (list[Reco Gen Particle]) all particles between hard matrix element mass particles downwards until the next particle decay
+	def findhardMEMassParticleChainParticles(self, hardMEMassParticles, fsrJetParticlesME, hardMEMassParticleChainParticles):
+		for hf in hardMEMassParticles:
+			self.findhardMEMassParticleChainParticlesFromMassParticle(hf,fsrJetParticlesME,hardMEMassParticleChainParticles)
 
-	def findFsrJetParticlesPS(self,hardMEFermionChainParticles,fsrJetParticlesPS):
-		for hic in hardMEFermionChainParticles:
+	## finds all final state radiation (FSR) jet mother particles coming from parton showers (PS)
+	#
+	#@param hardMEMassParticleChainParticles	(list[Reco Gen Particle]) all particles between hard matrix element mass particles downwards until the next particle decay
+	#@param fsrJetParticlesPS 			[OUT] (list[Reco Gen Particle]) all final state radiation (FSR) jet mother particles coming from parton showers (PS)
+	def findFsrJetParticlesPS(self,hardMEMassParticleChainParticles,fsrJetParticlesPS):
+		for hic in hardMEMassParticleChainParticles:
 			hicPdgId = hic.pdgId()
 			for d in hic:
 				if hicPdgId == d.pdgId():
 					continue
-				if d in hardMEFermionChainParticles:
+				if d in hardMEMassParticleChainParticles:
 					continue
 				fsrJetParticlesPS.add(d)
 
+	## finds all FSR/ISR jet mother particles and writes them to the root-extracted file
+	#
+	#@param histos			(object) Histogram container
+	#@param eventweight		(double) weight of the current event
+	#@param genParticlesProduct	(list[Reco Gen Particle]) all event particles
+	#@param motherParticles		(list[Reco Gen Particle]) the two protons
+	#@param firstHardParticles	(list[Reco Gen Particle]) The reactants of the hardest process
+	#@param fsrIsrParticles 	[OUT] (tupel(list[Reco Gen Particle]),tupel(list[Reco Gen Particle],list[Reco Gen Particle]))) (ISR,(FSRME,FSRPS)) all FSR/ISR jet mother particles
 	def findAndPlotFsrIsr(self,histos,eventweight,genParticlesProduct,motherParticles,firstHardParticles,fsrIsrParticles):
 		firstHardParticles = Set()
 		self.findFirstHardParticles(motherParticles[0],firstHardParticles)
@@ -301,12 +396,12 @@ class ExtractHistos(object):
 		self.findFsrJetParticlesME(genParticlesProduct,fsrJetParticlesME)
 		incomingHardParticles = Set()
 		self.findIncomingHardParticles(genParticlesProduct,incomingHardParticles)
-		hardMEFermions = Set()
-		self.findhardMEFermions(incomingHardParticles,hardMEFermions)
-		hardMEFermionChainParticles = Set()
-		self.findhardMEFermionChainParticles(hardMEFermions, fsrJetParticlesME, hardMEFermionChainParticles)
+		hardMEMassParticles = Set()
+		self.findhardMEMassParticles(incomingHardParticles,hardMEMassParticles)
+		hardMEMassParticleChainParticles = Set()
+		self.findhardMEMassParticleChainParticles(hardMEMassParticles, fsrJetParticlesME, hardMEMassParticleChainParticles)
 		fsrJetParticlesPS = Set()
-		self.findFsrJetParticlesPS(hardMEFermionChainParticles,fsrJetParticlesPS)
+		self.findFsrJetParticlesPS(hardMEMassParticleChainParticles,fsrJetParticlesPS)
 		
 		for p in isrJetParticles:
 			histos.isrjetenergy.fill(eventweight,p.energy())
