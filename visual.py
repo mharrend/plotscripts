@@ -9,10 +9,9 @@ import threading
 import runparams
 from particles import *
 
+## determines branch's origin
 #
-# Visualization
-# 
-
+# @return (bool) TRUE if branch is main event, FALSE otherwise
 def BranchIsMainEvent(particle):
 	if 21 <= particle.status() <= 29:
 		return True
@@ -24,6 +23,11 @@ def BranchIsMainEvent(particle):
 			return True
 	return False
 
+
+## specifies branches
+#
+# @param referenceParticles 	(list[RecoGenParticle]) motherParticles
+# @return  tuple(list[RecoGenParticle],list[RecoGenParticle]) (mainInteractionBranches, underlyingEventBranches)
 def GetSpecialBranches(referenceParticles):
 	
 	underlyingEventBranches = []
@@ -46,6 +50,14 @@ def GetSpecialBranches(referenceParticles):
 			
 	return mainInteractionBranches, underlyingEventBranches
 
+## visualization function
+#
+# @param fileName 		(string) output file name
+# @param referenceParticles 	list[RecoGenParticle] mother particles
+# @param runParams 		(object) run args
+# @param isrFsr 		(tuple(list[RecoGenParticle],tuple(list[RecoGenParticle],list[RecoGenParticle])))   (ISR,(FSRME,FSRPS)) lists of radiation mother particles
+# @param specialParticles 	(tuple(list[RecoGenParticle],list[RecoGenParticle],list[RecoGenParticle])) {Ws,Bs,Hs}
+# @param plotSlot 		(list[list[RecoGenParticle],string)]) tuplize particles lists and colors for additional particle colors
 def GraphViz(fileName, referenceParticles,  runParams, isrFsr, specialParticles, plotSlot):
 	diFileName = fileName + ".di"
 	pngFileName = fileName + ".png"
@@ -75,9 +87,19 @@ def GraphViz(fileName, referenceParticles,  runParams, isrFsr, specialParticles,
 	
 	GraphVizCreate (runParams, diFileName, pngFileName )
 
+## creates the call to the GraphVizrenderer
+#
+# @param runParams 		(object) run args
+# @param diFileName 		(string) output di file name
+# @param pngFileName 		(string) output png file name
 def GraphVizCreate(runParams, diFileName, pngFileName):
 	call([runParams.visualizationRenderer, diFileName ,"-Tpng","-o",pngFileName ])	
 	
+## creates a 2 character color hex string from an integer
+#
+# @param index 		(int) an arbitrary value
+# @param parity 	(int) parity
+# @return 	(string) 2 character color hex string from an integer
 def CreateColorChannelFromIndex(index,parity=1):
 	color = index * (256-25)
 	color = color % 256
@@ -90,6 +112,11 @@ def CreateColorChannelFromIndex(index,parity=1):
 
 	return result
 	
+## creates a 2 character color hex string from a jet type
+#
+# @param jetType	(string) jet type { "ISR", "FSR" }
+# @param numJet 	(int) numJet
+# @return 	(string) 2 character color hex string from a jet type
 def CreateColorFromParams(jetType,numJet):
 	if jetType == "FSR":
 		return "00" + CreateColorChannelFromIndex(numJet) + CreateColorChannelFromIndex(numJet,-1)
@@ -98,9 +125,21 @@ def CreateColorFromParams(jetType,numJet):
 	else:
 		raise Exception("unknown jet type: '" + jetType + "'")
 	
+## clamps energy to scale
+#
+# @param energy		(double) input energy
+# @param scaleMax 	(double) maximum
+# @param factor 	(double) factor (multiplier)
+# @return 	(double) clamped energy
 def ScaleEnergy(energy,scaleMax,factor):
 	return min(scaleMax,factor*energy)
 	
+## creates RBG value from scale (double) value
+#
+# @param energy		(double) input energy
+# @param scaleMax 	(double) maximum
+# @param factor 	(double) factor (multiplier)
+# @return 		(r,g,b) (double)
 def scaleToRgb(scale):
 	#print scale
 	if scale <= 1:
@@ -121,6 +160,10 @@ def scaleToRgb(scale):
 
 	return 1,0,1
 	
+## converts double val to 2 character hex string
+#
+# @param ratio		(double) input
+# @return 		(string) to 2 character hex string
 def ratioToHexChannel(ratio):
 	color = int(ratio * (255))
 	colorString = hex(color)
@@ -129,9 +172,17 @@ def ratioToHexChannel(ratio):
 		result = "0" + result
 	return result	
 	
+## converts (r,g,b) (double) to 6 character ascii hex color string
+#
+# @param rgb		(r,g,b) (double)
+# @return 		(string) 6 character ascii hex color string
 def RgbToString(rgb):
 	return ratioToHexChannel(rgb[0]) + ratioToHexChannel(rgb[1]) +ratioToHexChannel(rgb[2])
 	
+## converts (double) energy to 6 character ascii hex color string
+#
+# @param energy		(double)
+# @return 		(string) 6 character ascii hex color string
 def CreateColorFromEnergy(energy):
 	if energy > 0:
 		scale = ScaleEnergy(math.log(energy),5,0.55)
@@ -140,6 +191,22 @@ def CreateColorFromEnergy(energy):
 	rgb = scaleToRgb(scale)
 	return RgbToString(rgb)
 	
+## recurses through particle tree to create GraphViz plot
+#
+# @param diFile			(string) path to difile
+# @param p			(RecoGenParticle) current particle
+# @param rec			(int) level of recursion
+# @param lastParticleIdentifier	(string) this particles mother's identifier from which the link will be created
+# @param particleSet		(list[RecoGenParticle])
+# @param particleConnectionSet	(list[RecoGenParticle])
+# @param runParams		(object) handles args passed to the program
+# @param mainInteractionInfo	(object) {mainInteractionBranches,underlyingEventBranches}, both list[RecoGenParticle]
+# @param isrFsr			(ISR,(FSRME,FSRPS))
+# @param specialParticles	(list[RecoGenParticle])
+# @param plotSlot		(object) additional plotting info
+# @param isWDaughter		(bool) TRUE is this particle is daughter of a W, FALSE otherwise
+# @param isBDaughter		(bool) TRUE is this particle is daughter of a B, FALSE otherwise
+# @param isHDaughter		(bool) TRUE is this particle is daughter of a H, FALSE otherwise
 def GraphVizRecurseParticle(diFile, p, rec, lastParticleIdentifier, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot, isWDaughter=False,  isBDaughter=False,  isHDaughter=False):
 
 	cutThis = False

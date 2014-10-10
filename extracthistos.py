@@ -432,6 +432,16 @@ class ExtractHistos(object):
 		fsrIsrParticles.append(isrJetParticles)
 		fsrIsrParticles.append( (fsrJetParticlesME,fsrJetParticlesPS) )
 
+	## processes one event
+	#
+	#@param infoObj			(object) root info object
+	#@param genJetsObj		(object) root genJets object
+	#@param genParticlesObj		(object) root genParticles object
+	#@param currentCut		(string) currentCutString
+	#@param currentCutIndex		(int) currentCut #
+	#@param currentEventIndex	(int) currentEvent #
+	#@param currentEvent		(object) currentEvent
+	#@param histos			(object) Histogram container
 	def processEvent(self,infoObj, genJetsObj, genParticlesObj, currentCut, currentCutIndex, currentEventIndex, currentEvent, histos):
 		
 		currentEvent.getByLabel (genJetsObj.label, genJetsObj.handle)
@@ -465,6 +475,10 @@ class ExtractHistos(object):
 			fileName = "event" + str(currentEventIndex);
 			visual.GraphViz(fileName, motherParticles, self.runParams, fsrIsrParticles, specialParticles, plotSlot)
 	
+	## runs a batch task
+	#
+	#@param runParams		(object) runParams as received by program switches
+
 	def run(self, runParams):
 		self.runParams = runParams
 		InitializeFWLite()

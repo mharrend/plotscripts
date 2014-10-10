@@ -2,8 +2,10 @@ from math import pi
 
 from histogram import *
 
-# histos
+## Container for all histograms written to extracted-root files
 class Histos(object):
+	
+	## called to initialize all histograms
 	def __init__(self, currentCutString, outputFileObject):
 		
 		self.njets = Histogram (outputFileObject, "HnJets"+currentCutString, "Number of Jets "+currentCutString, 15, -0.5, 14.5)
@@ -71,6 +73,7 @@ class Histos(object):
 		self.particlePt = Histogram(outputFileObject, "HparticlePt"+currentCutString, "pT of particles "+currentCutString,1000,0,100)
 		self.particleE = Histogram(outputFileObject, "HparticleE"+currentCutString, "Energy of particles "+currentCutString,1000,0,300)
 			
+	## called to finalize all histograms and thus write them to the extracted-root file
 	def finalize (self):
 		self.njets.finalize()
 		self.pt.finalize()

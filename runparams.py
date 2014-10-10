@@ -1,4 +1,6 @@
-# runparams
+
+## handles args passed to the program
+#
 class RunParams(object):
 	def __init__(self):
 		self.inputFileList = []

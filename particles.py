@@ -1,7 +1,5 @@
 import ROOT
 
-#ROOT.Math.LorentzVector('ROOT::Math::PxPyPzE4D<double>')()
-
 # Use human readable particle names for pdgIds according to 
 # http://pdg.lbl.gov/2014/reviews/rpp2014-rev-monte-carlo-numbering.pdf
 PARTICLE = { 1 : "d",
@@ -29,7 +27,7 @@ PARTICLE = { 1 : "d",
 	2212 : "p"
 	}
 
-# Get human readable particle name by PdgId
+## Get human readable particle name by PdgId
 def ParticleGetName(pdgId):
 	try:
 		if pdgId < 0:
@@ -39,6 +37,7 @@ def ParticleGetName(pdgId):
 	except KeyError:
 		return str(pdgId)
 	
+## Get Pointer adress as hash
 def ParticleGetPointer(p):
 	strP = str(p)
 	indexF = strP.find('0x')+2
@@ -46,12 +45,15 @@ def ParticleGetPointer(p):
 	indexL = particleIdentifier.find('>')
 	return particleIdentifier[:indexL]
 
+## Create human readable label
 def ParticleGetLabel(p):
 	return ParticleGetName(p.pdgId()) + " [" + str(p.status()) + "]"
 
+## Create human readable label and more info
 def ParticleGetInfo(p):
 	return ParticleGetLabel(p) + " (0x" + ParticleGetPointer(p) + ")"
 
+## Override RecoGenObject __hash__() function
 def Particle__hash__(self):
 	try:
 		return self.___hash
@@ -60,6 +62,7 @@ def Particle__hash__(self):
 		self.___hash = int(ParticleGetPointer(self),16)
 	return self.___hash
 
+## Override RecoGenObject __eq__() function
 def Particle__eq__(self,other):
 	return self.__hash__() == other.__hash__()
 

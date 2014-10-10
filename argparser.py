@@ -4,22 +4,15 @@ from runparams import *
 import os.path
 import string
 
+## handles args passed to the program
+#
 class ArgParser(object):
-    #def displayInfo(self):
-	#    print "[useVisualization]=" + str (self.runParams.useVisualization)
-	 #   print "[maxEvents]=" + str (self.runParams.maxEvents)
-	  #  print "[useDebugOutput]=" + str (self.runParams.useDebugOutput)
-	   # print "[OutputFile]=" + self.runParams.outputFile
-	    #print "[InputFiles]"
-	    #for inputFile in self.runParams.inputFileList:
-		#    print "  " + inputFile
 	 
     def parsePtCutString(self, ptCutString):
 	return map(float, string.split(ptCutString,',') )
     
     def parseEventsString(self, eventsString):
 	return map(int, string.split(eventsString,',') )
-	 
 	 
     def displayUserInfo(self):
 	    print ""

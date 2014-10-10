@@ -1,7 +1,7 @@
 import ROOT
 from ROOT import TH1F, TFile, TTree, TString, gSystem
 
-#----------- Class for Histograms ----------------#
+## Class for Histograms
 # initialize histograms the same way like when using TH1F only with Histograms
 # the constuctor initializes 3 TH1F objects.
 class Histogram(object):
