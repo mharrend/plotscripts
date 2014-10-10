@@ -190,10 +190,7 @@ class ExtractHistos(object):
 		
 		cs = p.status()
 		
-		#print "FHP: " + ParticleGetInfo(p)
-		
 		if 20 <= cs <= 29:
-			#print " [HARD]"
 			for d in p:
 				nMothers = d.numberOfMothers()
 				for i in range(0,nMothers):
@@ -202,25 +199,19 @@ class ExtractHistos(object):
 				
 		# discard outgoing iss
 		if cs == 43 or cs == 44:
-			#print " [DISCARD4x]"
 			return False
 		
 		# discard outgoing fss
 		if cs == 51 or cs == 52:
-			#print " [DISCARD5x]"
 			return False
 		
 		# discard outgoing beam remnant
 		if cs == 62 or cs == 63:
-			#print " [DISCARD6x]"
 			return False
 		
 		# discard hadronization process particles
 		if 70 <= cs <= 79:
-			#print " [DISCARD7x]"
 			return False
-				
-		#print " [Search Children]"
 				
 		for d in p:
 			if self.findFirstHardParticles(d, currentList):
@@ -357,32 +348,6 @@ class ExtractHistos(object):
 			
 		motherParticles = self.getMotherParticles(genParticlesProduct)
 		self.plotGenJets(histos,currentCut,eventweight,genJetsProduct)
-
-		#print "Debug:"
-		
-		#p = motherParticles[0]
-		
-		#print str(p)
-		
-		#print "p.__hash__()=" + str(p.__hash__())
-		#print "p info = " + ParticleGetInfo(p)
-		
-		#set = Set()
-		#set.add(p)
-		#daughter = p.daughter(0)
-		#motherOfDaughter=daughter.mother(0)
-		#set.add(motherOfDaughter)
-		
-		#print "motherOfDaughter.__hash__()=" + str(motherOfDaughter.__hash__())
-		#print "motherOfDaughter info = " + ParticleGetInfo(motherOfDaughter)
-		
-		#print "set size = " + str(len(set))
-		#for s in set:
-			#print " s.__hash__()=" + str(s.__hash__())
-			#print " s info = " + ParticleGetInfo(s)
-
-		#print "HashCheck: " + str(p.__hash__()) + " == " + str(motherOfDaughter.__hash__()) + " -> " + str( p.__hash__() == motherOfDaughter.__hash__())
-		#print "EqCheck: " + str( p == motherOfDaughter)
 
 		fsrIsrParticles = []
 		firstHardParticles = Set()

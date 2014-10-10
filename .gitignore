@@ -8,5 +8,11 @@
 *.*~
 *~
 
+# doxyfiles
+/html
+/latex
+
+
 #convienience
 review
+test.py
