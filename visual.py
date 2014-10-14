@@ -78,7 +78,7 @@ def GraphViz(fileName, referenceParticles,  runParams, isrFsr, specialParticles,
 	
 	lastParticleIdentifier = ""
 	startingRecursionLevel = 0
-		
+	
 	GraphVizRecurseParticle(diFile, referenceParticles[0], startingRecursionLevel, lastParticleIdentifier, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot)
 	GraphVizRecurseParticle(diFile, referenceParticles[1], startingRecursionLevel, lastParticleIdentifier, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot)
 	
@@ -284,7 +284,7 @@ def GraphVizRecurseParticle(diFile, p, rec, lastParticleIdentifier, particleSet,
 			break
 
 	if usedPlotSlot:
-		pass
+		promimentColorMode = True
 	elif runParams.visualizationEnergyMode:
 		colorString = "black"
 		textColorString = "black"
@@ -344,18 +344,24 @@ def GraphVizRecurseParticle(diFile, p, rec, lastParticleIdentifier, particleSet,
 	
 	if runParams.visualizationColorSpecialJets:
 		for w in specialParticles.Ws:
+			print "ws"
 			if ParticleGetPointer(p) == ParticleGetPointer(w):
 				isWDaughter = True
+				print "w"
 				cutThis = runParams.visualizationCutSpecialJets
 				
 		for b in specialParticles.Bs:
+			print "bs"
 			if ParticleGetPointer(p) == ParticleGetPointer(b):
 				isBDaughter = True
+				print "b"
 				cutThis = runParams.visualizationCutSpecialJets
 			
 		for h in specialParticles.Hs:
+			print "hs"
 			if ParticleGetPointer(p) == ParticleGetPointer(h):
 				isHDaughter = True
+				print "h"
 				cutThis = runParams.visualizationCutSpecialJets
 
 	attrib = styleString + ", color=" + colorString + ", fillcolor=" + fillColorString + ", fontcolor=" + textColorString

@@ -61,7 +61,7 @@ class ExtractHistos(object):
 			
 		raise Exception("Invalid W Daughters in decay Search")
 		
-	## writes genGenInformation to extracted-root file
+	## writes GenJetInformation to extracted-root file
 	#
 	#@param histos		(object) Histogramm container
 	#@param currentCut	(int) currently examined pT-Cut
@@ -111,7 +111,7 @@ class ExtractHistos(object):
 	#@param hasSeenW		(bool) TRUE if this branch is child of a W, FALSE otherwise
 	#@param hasSeenB		(bool) TRUE if this branch is child of a B, FALSE otherwise
 	#@param hasSeenH		(bool) TRUE if this branch is child of a H, FALSE otherwise
-	def findSpecialHardParticles(self, firstHardParticle, Ws = [], Bs = [], Hs = [], hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
+	def findSpecialHardParticles(self, firstHardParticle, Ws = Set(), Bs = Set(), Hs = Set(), hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
 		for cParticle in firstHardParticle:
 			cStatus = cParticle.status()
 			
@@ -127,33 +127,32 @@ class ExtractHistos(object):
 				if absPdgId == 24:
 					thisIsW = True
 					if hasSeenT and not hasSeenW:
-						Ws.append(cParticle)
+						Ws.add(cParticle)
 						continue
 				if absPdgId == 5:
 					thisIsB = True
 					if hasSeenT and not hasSeenB:
-						Bs.append(cParticle)
+						Bs.add(cParticle)
 						continue
 				if absPdgId == 25:
 					thisIsH = True
-					Hs.append(cParticle)
+					Hs.add(cParticle)
 					continue
-			self.findSpecialHardParticles(firstHardParticle,Ws,Bs,Hs,hasSeenT or thisIsTop, hasSeenW or thisIsW , hasSeenB or thisIsB ,hasSeenH or thisIsH )
+			self.findSpecialHardParticles(cParticle,Ws,Bs,Hs,hasSeenT or thisIsTop, hasSeenW or thisIsW , hasSeenB or thisIsB ,hasSeenH or thisIsH )
 		return Ws, Bs, Hs 
 		
 		
-	## finds the products of the hardest process and write the result to the extracted-root files
+	## finds the products of the hardest process and writes the result to the extracted-root files
 	#
 	#@param histos			(object) Histogramm container
 	#@param eventweight		(double) weight of currently examined event
-	#@param currentCut		(int) currently examined pT-Cut
 	#@param firstHardParticles	(list[Reco Gen Particle]) The reactants of the hardest process
 	#
 	#@return  specialParticles	(tuple (Ws,Bs,Hs)) lists of Reco Gen Particles
 	def findAndPlotSpecialHardParticles(self,histos, eventweight, firstHardParticles):
-		Ws = []
-		Bs = []
-		Hs = []
+		Ws = Set()
+		Bs = Set()
+		Hs = Set()
 		for firstHard in firstHardParticles:
 			Ws, Bs, Hs = self.findSpecialHardParticles(firstHard, Ws, Bs, Hs)
 			break
@@ -323,7 +322,7 @@ class ExtractHistos(object):
 	#@param genParticlesProduct	(list[Reco Gen Particle]) all event particles
 	#@param incomingHardParticles 	[OUT] (list[Reco Gen Particle]) all particles with status id 21
 	def findIncomingHardParticles(self,genParticlesProduct, incomingHardParticles):
-		for p in genParticlesPall event particlesroduct:
+		for p in genParticlesProduct:
 			if p.status() == 21:
 				incomingHardParticles.add(p)
 				
@@ -382,10 +381,10 @@ class ExtractHistos(object):
 	#@param eventweight		(double) weight of the current event
 	#@param genParticlesProduct	(list[Reco Gen Particle]) all event particles
 	#@param motherParticles		(list[Reco Gen Particle]) the two protons
-	#@param firstHardParticles	(list[Reco Gen Particle]) The reactants of the hardest process
+	#@param firstHardParticles	[OUT] (list[Reco Gen Particle]) The reactants of the hardest process
 	#@param fsrIsrParticles 	[OUT] (tupel(list[Reco Gen Particle]),tupel(list[Reco Gen Particle],list[Reco Gen Particle]))) (ISR,(FSRME,FSRPS)) all FSR/ISR jet mother particles
 	def findAndPlotFsrIsr(self,histos,eventweight,genParticlesProduct,motherParticles,firstHardParticles,fsrIsrParticles):
-		firstHardParticles = Set()
+		#firstHardParticles = Set()
 		self.findFirstHardParticles(motherParticles[0],firstHardParticles)
 		#self.findFirstHardParticles(motherParticles[1],firstHardParticles)
 		mainInteractionChainParticles = Set()
@@ -459,7 +458,6 @@ class ExtractHistos(object):
 		self.findAndPlotFsrIsr(histos,eventweight,genParticlesProduct,motherParticles,firstHardParticles,fsrIsrParticles)
 		
 		specialParticles = self.findAndPlotSpecialHardParticles(histos,eventweight,firstHardParticles)
-
 		
 		plotSlot = []
 	
