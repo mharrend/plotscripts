@@ -55,7 +55,7 @@ def GetSpecialBranches(referenceParticles):
 # @param fileName 		(string) output file name
 # @param referenceParticles 	list[RecoGenParticle] mother particles
 # @param runParams 		(object) run args
-# @param isrFsr 		(tuple(list[RecoGenParticle],tuple(list[RecoGenParticle],list[RecoGenParticle])))   (ISR,(FSRME,FSRPS)) lists of radiation mother particles
+# @param isrFsr 		(tuple(list[RecoGenParticle],list[RecoGenParticle],list[RecoGenParticle]))   (ISR,MERE,FSR) lists of radiation mother particles
 # @param specialParticles 	(tuple(list[RecoGenParticle],list[RecoGenParticle],list[RecoGenParticle])) {Ws,Bs,Hs}
 # @param plotSlot 		(list[list[RecoGenParticle],string)]) tuplize particles lists and colors for additional particle colors
 def GraphViz(fileName, referenceParticles,  runParams, isrFsr, specialParticles, plotSlot):
@@ -201,7 +201,7 @@ def CreateColorFromEnergy(energy):
 # @param particleConnectionSet	(list[RecoGenParticle])
 # @param runParams		(object) handles args passed to the program
 # @param mainInteractionInfo	(object) {mainInteractionBranches,underlyingEventBranches}, both list[RecoGenParticle]
-# @param isrFsr			(ISR,(FSRME,FSRPS))
+# @param isrFsr			(ISR,MERE,FSRPS)
 # @param specialParticles	(list[RecoGenParticle])
 # @param plotSlot		(object) additional plotting info
 # @param isWDaughter		(bool) TRUE is this particle is daughter of a W, FALSE otherwise
@@ -210,6 +210,11 @@ def CreateColorFromEnergy(energy):
 def GraphVizRecurseParticle(diFile, p, rec, lastParticleIdentifier, particleSet, particleConnectionSet, runParams, mainInteractionInfo, isrFsr, specialParticles, plotSlot, isWDaughter=False,  isBDaughter=False,  isHDaughter=False):
 
 	cutThis = False
+	
+	#for i in range(0,100):
+		#r = math.exp(i/10.)
+		#print str(r) + ": " + CreateColorFromEnergy(r)
+	#return
 	
 	if p.p4().energy() < runParams.visualizationEnergyCutoff:
 		cutThis = True
@@ -309,7 +314,7 @@ def GraphVizRecurseParticle(diFile, p, rec, lastParticleIdentifier, particleSet,
 				styleString = ", style=filled"
 			isrFsrJetColored = True
 				
-	for numJet, jet in enumerate(isrFsr[1][0]):
+	for numJet, jet in enumerate(isrFsr[1]):
 		currentCandidate = ParticleGetPointer(jet)
 		if currentCandidate == pPtr:
 			if not promimentColorMode:
@@ -318,7 +323,7 @@ def GraphVizRecurseParticle(diFile, p, rec, lastParticleIdentifier, particleSet,
 				styleString = ", style=filled"
 			isrFsrJetColored = True
 			
-	for numJet, jet in enumerate(isrFsr[1][1]):
+	for numJet, jet in enumerate(isrFsr[2]):
 		currentCandidate = ParticleGetPointer(jet)
 		if currentCandidate == pPtr:
 			if not promimentColorMode:
@@ -344,24 +349,18 @@ def GraphVizRecurseParticle(diFile, p, rec, lastParticleIdentifier, particleSet,
 	
 	if runParams.visualizationColorSpecialJets:
 		for w in specialParticles.Ws:
-			print "ws"
 			if ParticleGetPointer(p) == ParticleGetPointer(w):
 				isWDaughter = True
-				print "w"
 				cutThis = runParams.visualizationCutSpecialJets
 				
 		for b in specialParticles.Bs:
-			print "bs"
 			if ParticleGetPointer(p) == ParticleGetPointer(b):
 				isBDaughter = True
-				print "b"
 				cutThis = runParams.visualizationCutSpecialJets
 			
 		for h in specialParticles.Hs:
-			print "hs"
 			if ParticleGetPointer(p) == ParticleGetPointer(h):
 				isHDaughter = True
-				print "h"
 				cutThis = runParams.visualizationCutSpecialJets
 
 	attrib = styleString + ", color=" + colorString + ", fillcolor=" + fillColorString + ", fontcolor=" + textColorString
@@ -375,6 +374,8 @@ def GraphVizRecurseParticle(diFile, p, rec, lastParticleIdentifier, particleSet,
 			if particleConnection not in particleConnectionSet:
 				diFile.write(particleConnection)
 				particleConnectionSet.add(particleConnection)
+		
+		#print particleLabelFinal + " e = " + str(p.energy())+ " pt = " + str(p.pt())
 		
 	if cutThis:
 		return

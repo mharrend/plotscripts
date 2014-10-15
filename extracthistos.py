@@ -73,8 +73,6 @@ class ExtractHistos(object):
 		firstJetpt = 0
 		secondJetpt = 0
 		firstJeteta = 0
-		nISRJets = 0
-		nFSRJets = 0
 			
 		for currentJetIndex, currentJet in enumerate(genJetsProduct):
 			
@@ -95,8 +93,6 @@ class ExtractHistos(object):
 				histos.firstjeteta.fill(eventweight,firstJeteta)
 			  
 		histos.njets.fill(eventweight,nJets)
-		histos.nIsrJets.fill(eventweight,min(15,nISRJets))
-		histos.nFsrJets.fill(eventweight,min(15,nFSRJets))
 		
 		
 	## finds the products of the hardest process
@@ -300,11 +296,11 @@ class ExtractHistos(object):
 					continue
 				isrJetParticles.add(dMic)
 				
-	## finds all final state radiation (FSR) jet mother particles coming from the matrix element (ME)
+	## finds all matrix element real emission (MERE) jet mother particles
 	#
 	#@param genParticlesProduct	(list[Reco Gen Particle]) all event particles
-	#@param fsrJetParticlesME 	[OUT] (list[Reco Gen Particle]) all final state radiation (FSR) jet mother particles coming from the matrix element (ME)
-	def findFsrJetParticlesME(self,genParticlesProduct,fsrJetParticlesME):
+	#@param jetParticlesMERE 	[OUT] (list[Reco Gen Particle]) all matrix element real emission (MERE) jet mother particles
+	def findMEREJetParticles(self,genParticlesProduct,jetParticlesMERE):
 		for p in genParticlesProduct:
 			if p.status() == 23:
 				found = False
@@ -315,7 +311,7 @@ class ExtractHistos(object):
 						found = True
 						break
 				if found:
-					fsrJetParticlesME.add(p)
+					jetParticlesMERE.add(p)
 				
 	## finds all particles with status id 21
 	#
@@ -339,27 +335,27 @@ class ExtractHistos(object):
 	## finds all particles between hard matrix element massParticles downwards until the next particle decay
 	#
 	#@param hardMassParticle			(list[Reco Gen Particle]) hard matrix element massParticles
-	#@param fsrJetParticlesME 			(list[Reco Gen Particle]) FSR Jet Particles from matrix element
+	#@param jetParticlesMERE 			(list[Reco Gen Particle]) matrix element real emission (MERE) particles
 	#@param hardMEMassParticleChainParticles 	[OUT] (list[Reco Gen Particle]) all particles between hard matrix element mass particles downwards until the next particle decay
-	def findhardMEMassParticleChainParticlesFromMassParticle(self, hardMassParticle, fsrJetParticlesME, hardMEMassParticleChainParticles):
+	def findhardMEMassParticleChainParticlesFromMassParticle(self, hardMassParticle, jetParticlesMERE, hardMEMassParticleChainParticles):
 		hardMassParticleStatus = hardMassParticle.status()
 		hardMassParticlePdgId = hardMassParticle.pdgId()
 		for d in hardMassParticle:
-			if d.pdgId() <> hardMassParticlePdgId or hardMassParticle in fsrJetParticlesME:
+			if d.pdgId() <> hardMassParticlePdgId or hardMassParticle in jetParticlesMERE:
 				continue
 
 			hardMEMassParticleChainParticles.add(hardMassParticle)
-			self.findhardMEMassParticleChainParticlesFromMassParticle(d,fsrJetParticlesME,hardMEMassParticleChainParticles)
+			self.findhardMEMassParticleChainParticlesFromMassParticle(d,jetParticlesMERE,hardMEMassParticleChainParticles)
 			return
 	
 	## finds all particles between hard matrix element massParticles downwards until the next particle decay
 	#
 	#@param hardMEMassParticles			(list[Reco Gen Particle]) hard matrix element massParticles
-	#@param fsrJetParticlesME 			(list[Reco Gen Particle]) all final state radiation (FSR) jet mother particles coming from the matrix element (ME)
+	#@param jetParticlesMERE 			(list[Reco Gen Particle]) all matrix element real emission (MERE) particles
 	#@param hardMEMassParticleChainParticles 	[OUT] (list[Reco Gen Particle]) all particles between hard matrix element mass particles downwards until the next particle decay
-	def findhardMEMassParticleChainParticles(self, hardMEMassParticles, fsrJetParticlesME, hardMEMassParticleChainParticles):
+	def findhardMEMassParticleChainParticles(self, hardMEMassParticles, jetParticlesMERE, hardMEMassParticleChainParticles):
 		for hf in hardMEMassParticles:
-			self.findhardMEMassParticleChainParticlesFromMassParticle(hf,fsrJetParticlesME,hardMEMassParticleChainParticles)
+			self.findhardMEMassParticleChainParticlesFromMassParticle(hf,jetParticlesMERE,hardMEMassParticleChainParticles)
 
 	## finds all final state radiation (FSR) jet mother particles coming from parton showers (PS)
 	#
@@ -382,7 +378,7 @@ class ExtractHistos(object):
 	#@param genParticlesProduct	(list[Reco Gen Particle]) all event particles
 	#@param motherParticles		(list[Reco Gen Particle]) the two protons
 	#@param firstHardParticles	[OUT] (list[Reco Gen Particle]) The reactants of the hardest process
-	#@param fsrIsrParticles 	[OUT] (tupel(list[Reco Gen Particle]),tupel(list[Reco Gen Particle],list[Reco Gen Particle]))) (ISR,(FSRME,FSRPS)) all FSR/ISR jet mother particles
+	#@param fsrIsrParticles 	[OUT] (tupel(list[Reco Gen Particle]),list[Reco Gen Particle],list[Reco Gen Particle])) (ISR,MERE,FSR) all FSR/MERE/ISR jet mother particles
 	def findAndPlotFsrIsr(self,histos,eventweight,genParticlesProduct,motherParticles,firstHardParticles,fsrIsrParticles):
 		#firstHardParticles = Set()
 		self.findFirstHardParticles(motherParticles[0],firstHardParticles)
@@ -391,14 +387,14 @@ class ExtractHistos(object):
 		self.findMainInteractionChainParticles(firstHardParticles,mainInteractionChainParticles)
 		isrJetParticles = Set()
 		self.findIsrJetParticles(mainInteractionChainParticles,firstHardParticles,motherParticles,isrJetParticles)
-		fsrJetParticlesME = Set()
-		self.findFsrJetParticlesME(genParticlesProduct,fsrJetParticlesME)
+		jetParticlesMERE = Set()
+		self.findMEREJetParticles(genParticlesProduct,jetParticlesMERE)
 		incomingHardParticles = Set()
 		self.findIncomingHardParticles(genParticlesProduct,incomingHardParticles)
 		hardMEMassParticles = Set()
 		self.findhardMEMassParticles(incomingHardParticles,hardMEMassParticles)
 		hardMEMassParticleChainParticles = Set()
-		self.findhardMEMassParticleChainParticles(hardMEMassParticles, fsrJetParticlesME, hardMEMassParticleChainParticles)
+		self.findhardMEMassParticleChainParticles(hardMEMassParticles, jetParticlesMERE, hardMEMassParticleChainParticles)
 		fsrJetParticlesPS = Set()
 		self.findFsrJetParticlesPS(hardMEMassParticleChainParticles,fsrJetParticlesPS)
 		
@@ -407,21 +403,15 @@ class ExtractHistos(object):
 			histos.isrjetpt.fill(eventweight,p.pt())
 		histos.nIsrJets.fill(eventweight,len(isrJetParticles))
 			
-		for p in fsrJetParticlesME:
-			histos.fsrjetenergyME.fill(eventweight,p.energy())
-			histos.fsrjetptME.fill(eventweight,p.pt())
-			histos.fsrjetenergy.fill(eventweight,p.energy())
-			histos.fsrjetpt.fill(eventweight,p.pt())
-		histos.nFsrJetsME.fill(eventweight,len(fsrJetParticlesME))
+		for p in jetParticlesMERE:
+			histos.MEREjetenergy.fill(eventweight,p.energy())
+			histos.MEREjetpt.fill(eventweight,p.pt())
+		histos.nMEREJets.fill(eventweight,len(jetParticlesMERE))
 			
 		for p in fsrJetParticlesPS:
 			histos.fsrjetenergyPS.fill(eventweight,p.energy())
 			histos.fsrjetptPS.fill(eventweight,p.pt())
-			histos.fsrjetenergy.fill(eventweight,p.energy())
-			histos.fsrjetpt.fill(eventweight,p.pt())
 		histos.nFsrJetsPS.fill(eventweight,len(fsrJetParticlesPS))
-		
-		histos.nFsrJets.fill(eventweight,len(fsrJetParticlesPS)+len(fsrJetParticlesME))
 		
 		# particle Energy
 		for p in genParticlesProduct:
@@ -429,7 +419,9 @@ class ExtractHistos(object):
 			histos.particleE.fill(eventweight,p.energy())	
 				
 		fsrIsrParticles.append(isrJetParticles)
-		fsrIsrParticles.append( (fsrJetParticlesME,fsrJetParticlesPS) )
+		fsrIsrParticles.append(jetParticlesMERE)
+		fsrIsrParticles.append(fsrJetParticlesPS)
+		
 
 	## processes one event
 	#
