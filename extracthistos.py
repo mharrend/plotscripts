@@ -167,32 +167,47 @@ class ExtractHistos(object):
 				nLeptonicWDecays = nLeptonicWDecays+1
 				histos.W_Leptonic_Pt.fill(eventweight,WReferenceparticle.p4().pt())
 				histos.W_Leptonic_E.fill(eventweight,WReferenceparticle.p4().energy())
+				histos.W_Leptonic_theta.fill(eventweight,WReferenceparticle.p4().theta())
+				histos.W_Leptonic_phi.fill(eventweight,WReferenceparticle.p4().phi())
 				
 				for cChild in WReferenceparticle:
 					pdgId = cChild.pdgId()
 					if pdgId == 11:
 						histos.W_Leptonic_e_Pt.fill(eventweight,cChild.p4().pt())
 						histos.W_Leptonic_e_E.fill(eventweight,cChild.p4().energy())
+						histos.W_Leptonic_e_theta.fill(eventweight,cChild.p4().theta())
+						histos.W_Leptonic_e_phi.fill(eventweight,cChild.p4().phi())
 					if pdgId == 12:
 						histos.W_Leptonic_nue_Pt.fill(eventweight,cChild.p4().pt())
 						histos.W_Leptonic_nue_E.fill(eventweight,cChild.p4().energy())
+						histos.W_Leptonic_nue_theta.fill(eventweight,cChild.p4().theta())
+						histos.W_Leptonic_nue_phi.fill(eventweight,cChild.p4().phi())
 					if pdgId == 13:
 						histos.W_Leptonic_mu_Pt.fill(eventweight,cChild.p4().pt())
 						histos.W_Leptonic_mu_E.fill(eventweight,cChild.p4().energy())
+						histos.W_Leptonic_mu_theta.fill(eventweight,cChild.p4().theta())
+						histos.W_Leptonic_mu_phi.fill(eventweight,cChild.p4().phi())
 					if pdgId == 14:
 						histos.W_Leptonic_numu_Pt.fill(eventweight,cChild.p4().pt())
 						histos.W_Leptonic_numu_E.fill(eventweight,cChild.p4().energy())
+						histos.W_Leptonic_numu_theta.fill(eventweight,cChild.p4().theta())
+						histos.W_Leptonic_numu_phi.fill(eventweight,cChild.p4().phi())
 					if pdgId == 15:
 						histos.W_Leptonic_t_Pt.fill(eventweight,cChild.p4().pt())
 						histos.W_Leptonic_t_E.fill(eventweight,cChild.p4().energy())
+						histos.W_Leptonic_t_theta.fill(eventweight,cChild.p4().theta())
+						histos.W_Leptonic_t_phi.fill(eventweight,cChild.p4().phi())
 					if pdgId == 16:
 						histos.W_Leptonic_nut_Pt.fill(eventweight,cChild.p4().pt())
 						histos.W_Leptonic_nut_E.fill(eventweight,cChild.p4().energy())
+						histos.W_Leptonic_nut_theta.fill(eventweight,cChild.p4().theta())
+						histos.W_Leptonic_nut_phi.fill(eventweight,cChild.p4().phi())
 						
 			else:
 				nHadronicWDecays = nHadronicWDecays+1
 				histos.W_Hadronic_Pt.fill(eventweight,WReferenceparticle.p4().pt())
 				histos.W_Hadronic_E.fill(eventweight,WReferenceparticle.p4().energy())
+
 			
 		histos.W_n_Leptonic.fill(eventweight,nLeptonicWDecays)
 		histos.W_n_Hadronic.fill(eventweight,nHadronicWDecays)
