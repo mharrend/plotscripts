@@ -5,6 +5,8 @@ class RunParams(object):
 	def __init__(self):
 		self.inputFileList = []
 		self.outputFile = "output-extracted.root"
+		self.outputDir = ""
+		self.outputFilePath = ""
 		self.useVisualization = False
 		self.visualizationEnergyCutoff = -1
 		self.visualizationCutoffRadiation = False
@@ -24,3 +26,6 @@ class RunParams(object):
 		self.events = []
 		self.run = True
 		self.zeroAdditionalJets = False
+		self.multiProcessing = 0
+		self.modulo = 0
+		self.moduloRest = 0

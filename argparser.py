@@ -35,7 +35,12 @@ class ArgParser(object):
 	    print " -i   | --info:                           Shows this info"
 	    print " -l   | --limit:                          Limit maximum # of events processed"
 	    print " -o   | --output:                         Set output file (string)"
+	    print " -od  | --output-outputdirectory:         Set output directory (string)"
 	    print " -p   | --ptcuts:                         Set pTcuts (list of doubles seperated by ',')"
+	    print " -#   | --events:                         Specify events to processed (list of ints seperated by ',')"
+	    print " -m   | --multi-processing:               create n (int) subprocesses"
+	    print " -%   | --modulo:                         process only every nth event (int)"
+	    print " -%r  | --modulo-rest:                    process only every nth + r event (int)"
 	    print " -v   | --visualize:                      Create visualization(s)"
 	    print " -vs  | --visualize-skip-copies:          Do not render non-physical particle copies"
 	    print " -vnu | --visualize-no-underlying-event:  Do not visualize the underlying event"
@@ -47,7 +52,6 @@ class ArgParser(object):
 	    print " -vme | --visualize-mode-energy:          Color particles by their energy"
 	    print " -vmp | --visualize-mode-pt:              Color particles by their pT"
 	    print " -vr  | --visualize-renderer:             Specify GraphViz renderer (string), defaults to 'dot'"
-	    print " -#   | --events:                         Specify events to processed (list of ints seperated by ',')"
 	    print ""
 	    
     def __init__(self, args):
@@ -177,7 +181,32 @@ class ArgParser(object):
 		    self.runParams.events = self.parseEventsString(eventsString)
 		    skip = True
 		    continue
-		
+				
+	    	if ( arg == "-od" ) or ( arg == "--output-outputdirectory" )  :
+		    if nextArg is None or nextArg[0] == '-':
+			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
+		    self.runParams.outputDir = nextArg
+		    skip = True
+		    continue
+		if ( arg == "-m" ) or ( arg == "--multi-processing" )  :
+		    if nextArg is None or nextArg[0] == '-':
+			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
+		    self.runParams.multiProcessing = int(nextArg)
+		    skip = True
+		    continue
+		if ( arg == "-%" ) or ( arg == "--modulo" )  :
+		    if nextArg is None or nextArg[0] == '-':
+			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
+		    self.runParams.modulo = int(nextArg)
+		    skip = True
+		    continue
+		if ( arg == "-%r" ) or ( arg == "--modulo-rest" )  :
+		    if nextArg is None or nextArg[0] == '-':
+			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
+		    self.runParams.moduloRest = int(nextArg)
+		    skip = True
+		    continue
+			
 		if (arg[0] == '-'):
 			raise Exception("'" + arg + "' is not a valid switch!")
 		
@@ -207,5 +236,10 @@ class ArgParser(object):
 	if self.runParams.run:
 		if os.path.isfile(self.runParams.outputFile) and not forceOutputOverride:
 			raise Exception("'" + self.runParams.outputFile + "' exists. Use the --force switch to force overriding.")
+		
+		
+	if not os.path.exists(self.runParams.outputDir):
+    		os.makedirs(self.runParams.outputDir)
+	self.runParams.outputFilePath = self.runParams.outputDir + "/" + self.runParams.outputFile
 					
 	#self.displayInfo()

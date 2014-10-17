@@ -59,8 +59,8 @@ def GetSpecialBranches(referenceParticles):
 # @param specialParticles 	(tuple(list[RecoGenParticle],list[RecoGenParticle],list[RecoGenParticle])) {Ws,Bs,Hs}
 # @param plotSlot 		(list[list[RecoGenParticle],string)]) tuplize particles lists and colors for additional particle colors
 def GraphViz(fileName, referenceParticles,  runParams, isrFsr, specialParticles, plotSlot):
-	diFileName = fileName + ".di"
-	pngFileName = fileName + ".png"
+	diFileName = runParams.outputDir + "/" + fileName + ".di"
+	pngFileName = runParams.outputDir + "/" + fileName + ".png"
 	
 	diFile = open(diFileName , 'w')
 	diFile.write("digraph G {\n")

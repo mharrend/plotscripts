@@ -449,7 +449,7 @@ class ExtractHistos(object):
 	#@param currentEvent		(object) currentEvent
 	#@param histos			(object) Histogram container
 	def processEvent(self,infoObj, genJetsObj, genParticlesObj, currentCut, currentCutIndex, currentEventIndex, currentEvent, histos):
-		
+				
 		currentEvent.getByLabel (genJetsObj.label, genJetsObj.handle)
 		genJetsProduct = genJetsObj.handle.product()
 		currentEvent.getByLabel (infoObj.label, infoObj.handle)
@@ -487,7 +487,7 @@ class ExtractHistos(object):
 	def run(self, runParams):
 		self.runParams = runParams
 		InitializeFWLite()
-		outputFileObject = TFile(runParams.outputFile,"RECREATE")
+		outputFileObject = TFile(runParams.outputFilePath,"RECREATE")
 		totalEventCount = 0
 		Break = False
 		
@@ -537,6 +537,10 @@ class ExtractHistos(object):
 						sys.stdout.write('.')
 						sys.stdout.flush()
 							
+				if (runParams.modulo <> 0):
+					currentModIndex = currentEventIndex % runParams.modulo
+					if currentModIndex <> runParams.moduloRest:
+						continue
 				self.processEvent( infoObj, genJetsObj, genParticlesObj, currentCut, currentCutIndex, currentEventIndex, currentEvent, histos )
 				
 			endTime = time.time()
