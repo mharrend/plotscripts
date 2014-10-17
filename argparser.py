@@ -237,9 +237,11 @@ class ArgParser(object):
 		if os.path.isfile(self.runParams.outputFile) and not forceOutputOverride:
 			raise Exception("'" + self.runParams.outputFile + "' exists. Use the --force switch to force overriding.")
 		
-		
-	if not os.path.exists(self.runParams.outputDir):
-    		os.makedirs(self.runParams.outputDir)
-	self.runParams.outputFilePath = self.runParams.outputDir + "/" + self.runParams.outputFile
+	if len(self.runParams.outputDir) <> 0:
+		if not os.path.exists(self.runParams.outputDir):
+			os.makedirs(self.runParams.outputDir)
+		self.runParams.outputFilePath = self.runParams.outputDir + "/" + self.runParams.outputFile
+	else:
+		self.runParams.outputFilePath = self.runParams.outputFile
 					
 	#self.displayInfo()

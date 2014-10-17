@@ -8,12 +8,15 @@ from glob import glob
 import os
 from collections import namedtuple
 import time
+import copy
 
 import ROOT
 from sets import Set
 
 import cProfile
 import re
+
+import subprocess
 
 # sibling modules
 import visual
@@ -511,11 +514,11 @@ class ExtractHistos(object):
 			
 			events = Events (self.runParams.inputFileList)
 			histos = Histos(str(currentCut),outputFileObject)
-			
-			print 'Processing ' + str(events.size()) + ' events @ pTCut='+str(currentCut)+'GeV'
-			if not runParams.useDebugOutput:
-				sys.stdout.write("[                                                  ]\r[")
-				sys.stdout.flush()
+			if runParams.modulo == 0:
+				print 'Processing ' + str(events.size()) + ' events @ pTCut='+str(currentCut)+'GeV'
+				if not runParams.useDebugOutput:
+					sys.stdout.write("[                                                  ]\r[")
+					sys.stdout.flush()
 			percentage50 = 0 
 			for currentEventIndex, currentEvent in enumerate(events):
 			
@@ -528,14 +531,18 @@ class ExtractHistos(object):
 					Break = True
 					break
 			
+			
 				if runParams.useDebugOutput:
 					print "Event #" + str(currentEventIndex)
 				else:
 					percentageNow = 50. * currentEventIndex / events.size()
 					if percentageNow >= percentage50+1:
 						percentage50 = percentage50 + 1 
-						sys.stdout.write('.')
-						sys.stdout.flush()
+						if runParams.modulo == 0:
+							sys.stdout.write('.')
+							sys.stdout.flush()
+						else:
+							print "pT" + str(currentCut) + " P" + str(runParams.moduloRest+1) + "/" + str(runParams.modulo) + ": " + str( 100. * currentEventIndex / events.size()) + "%"
 							
 				if (runParams.modulo <> 0):
 					currentModIndex = currentEventIndex % runParams.modulo
@@ -559,8 +566,47 @@ if __name__ == '__main__':
 		argParser = ArgParser(sys.argv)
 		if not argParser.runParams.run:
 			sys.exit()
-		extractHistos = ExtractHistos()
-		extractHistos.run(argParser.runParams)
+		if argParser.runParams.multiProcessing <> 0 and argParser.runParams.modulo == 0:
+			newArgList = []
+			next = False
+			for arg in sys.argv:
+				if next:
+					next = False
+					continue
+				if arg == '-m' or arg == '--multi-processing' or arg == '-p' or arg == '--ptcuts' or arg == "-od" or arg == "--output-outputdirectory:":
+					next = True
+					continue
+				newArgList.append(arg)
+			print sys.argv
+			print newArgList
+			processMultiplier = int(argParser.runParams.multiProcessing)/len(argParser.runParams.pTCuts)
+			print "Spawning " + str(processMultiplier) + "*" + str(len(argParser.runParams.pTCuts)) + " processes"
+			processes = []
+			for ptCut in argParser.runParams.pTCuts:
+				for pm in range(0,processMultiplier):
+					thisList = copy.copy(newArgList)
+					thisDir = "pT" + str(str(ptCut)) + "_" + str(str(pm))
+					thisList.append("-p")
+					thisList.append(str(ptCut))
+					thisList.append("-%")
+					thisList.append(str(processMultiplier))
+					thisList.append("-%r")
+					thisList.append(str(pm))
+					thisList.append("-od")
+					thisList.append(thisDir)
+					print "spawning subprocess with args: " + str(thisList)
+					processes.append(subprocess.Popen(thisList))
+			print "Waiting for all subprocesses to finish their work ..."
+
+			for pIdx, p in enumerate(processes):
+				p.wait()
+				print "process " + str(pIdx+1) + "/" + str(len(processes)) + " finished with code " + str(p.returncode)
+			print "All subprocesses have finished their work."
+			print "Joining data ..."
+					
+		else:
+			extractHistos = ExtractHistos()
+			extractHistos.run(argParser.runParams)
 	except SystemExit:
 		sys.exit()
 	except:
