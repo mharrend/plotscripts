@@ -582,6 +582,10 @@ if __name__ == '__main__':
 			processMultiplier = int(argParser.runParams.multiProcessing)/len(argParser.runParams.pTCuts)
 			print "Spawning " + str(processMultiplier) + "*" + str(len(argParser.runParams.pTCuts)) + " processes"
 			processes = []
+			hAddList = []
+			hAddList.append("hadd")
+			hAddList.append("-f")
+			hAddList.append(argParser.runParams.outputFilePath)
 			for ptCut in argParser.runParams.pTCuts:
 				for pm in range(0,processMultiplier):
 					thisList = copy.copy(newArgList)
@@ -596,13 +600,20 @@ if __name__ == '__main__':
 					thisList.append(thisDir)
 					print "spawning subprocess with args: " + str(thisList)
 					processes.append(subprocess.Popen(thisList))
+					hAddList.append(thisDir + "/" + argParser.runParams.outputFile)
 			print "Waiting for all subprocesses to finish their work ..."
+			print "hAddList[] = " + str(hAddList)
 
 			for pIdx, p in enumerate(processes):
 				p.wait()
 				print "process " + str(pIdx+1) + "/" + str(len(processes)) + " finished with code " + str(p.returncode)
 			print "All subprocesses have finished their work."
 			print "Joining data ..."
+			p = subprocess.Popen(hAddList)
+			print "hAddList[] = " + str(hAddList)
+			print "Waiting for hadd to finish ..."
+			p.wait()
+			print "Outputfile has been written to " + argParser.runParams.outputFilePath
 					
 		else:
 			extractHistos = ExtractHistos()
