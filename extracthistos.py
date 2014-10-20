@@ -1,83 +1,524 @@
+#!/usr/bin/env python
 #Script to extract histograms from the Root Tree, that is produced by Pythia8 in CMSSW
-#Usage: TODO
+#Can be used to visualize events
 
 from DataFormats.FWLite import Events, Handle
-from math import pi
 import sys 
 from glob import glob
 import os
+from collections import namedtuple
+import time
+import copy
 
 import ROOT
-from ROOT import TH1F, TFile, TTree, TString, gSystem
+from sets import Set
+
+import cProfile
+import re
+
+import subprocess
 
 # sibling modules
 import visual
 from particles import *
 from runparams import *
 from argparser import *
-from histogram import *
-
+from histos import *
 
 IsInitialized = False
 
+def InitializeFWLite():
+	
+	global IsInitialized
+	
+	if IsInitialized:
+		return
+	
+	cmsswbase = TString.getenv("CMSSW_BASE")	
+	print 'Loading FW Lite setup.\n'
+	gSystem.Load("libFWCoreFWLite.so")
+	ROOT.AutoLibraryLoader.enable()
+	gSystem.Load("libDataFormatsFWLite.so")
+	gSystem.Load("libDataFormatsPatCandidates.so")
+	
+	IsInitialized = True
+
+## write root plots and trigger event visualization
+#
+#In executable mode, this class is called by the main function.
+#In package mode, use can create your own instance of this class.
+#Use the run() method.
 class ExtractHistos(object):
 
-	def initialize(self):
-		#-------------------------------------------------#
-		#First use FW Lite from CMSSW
-		#-------------------- FW Lite --------------------#
-		cmsswbase = TString.getenv("CMSSW_BASE")
-		
-		print 'Loading FW Lite setup.\n'
-		gSystem.Load("libFWCoreFWLite.so")
-		ROOT.AutoLibraryLoader.enable()
-		gSystem.Load("libDataFormatsFWLite.so")
-		gSystem.Load("libDataFormatsPatCandidates.so")
-		#-------------------------------------------------#
-	def run(self, runParams):
-		global IsInitialized
-		if not IsInitialized:
-			self.initialize()
-			IsInitialized = True
+	## determines the type of the W decay
+	#
+	#@param referenceParticle	(Reco Gen Particle) the W particle to be examined
+	#@return tuple ( (BOOL) TRUE if the decay is leptonic / FALSE otherwise, (Reco Gen Particle) last examined particle )
+	def WGetDecayType(self, referenceParticle):
+		for cParticle in referenceParticle:
+			absPdgId = abs(cParticle.pdgId())
 			
-		outputFileObject = TFile(runParams.outputFile,"RECREATE")
+			if absPdgId == 24:
+				return self.WGetDecayType(cParticle)
+			return 11 <= absPdgId <= 18, cParticle
+			
+		raise Exception("Invalid W Daughters in decay Search")
+		
+	## writes GenJetInformation to extracted-root file
+	#
+	#@param histos		(object) Histogramm container
+	#@param currentCut	(int) currently examined pT-Cut
+	#@param eventweight	(double) weight of currently examined event
+	#@param genJetsProduct	(object) root container of Gen Jets
+	def plotGenJets(self, histos, currentCut, eventweight, genJetsProduct):
+
+		nJets = 0
+		firstJetpt = 0
+		secondJetpt = 0
+		firstJeteta = 0
+			
+		for currentJetIndex, currentJet in enumerate(genJetsProduct):
+			
+			if currentJet.pt() >= currentCut and abs(currentJet.eta()) <= self.runParams.etaCut:
+				nJets = nJets + 1
+				histos.pt.fill(eventweight,currentJet.pt())
+				histos.phi.fill(eventweight,currentJet.phi())
+				histos.theta.fill(eventweight,currentJet.theta())
+				histos.energy.fill(eventweight,currentJet.energy())
+				if currentJet.pt() >= firstJetpt and currentJet.pt() >= secondJetpt:
+					secondJetpt = firstJetpt
+					firstJetpt = currentJet.pt()
+					firstJeteta = currentJet.eta()
+				elif currentJet.pt() >= secondJetpt and currentJet.pt() <= firstJetpt:
+					secondJetpt = currentJet.pt()
+				histos.firstjetpt.fill(eventweight,firstJetpt)
+				histos.secondjetpt.fill(eventweight,secondJetpt)
+				histos.firstjeteta.fill(eventweight,firstJeteta)
+			  
+		histos.njets.fill(eventweight,nJets)
+		
+		
+	## finds the products of the hardest process
+	#
+	# Particles can be { Higgs (H), W-Boson (W), B-Quark (B) }
+	# This function is used recursively
+	#@param firstHardParticle	(Reco Gen Particle) The reactants of the hardest process 
+	#@param Ws			[OUT] (list[Reco Gen Particle]) found W particles
+	#@param Bs			[OUT] (list[Reco Gen Particle]) found B particles
+	#@param Hs			[OUT] (list[Reco Gen Particle]) found H particles
+	#@param hasSeenT		(bool) TRUE if this branch is child of a T, FALSE otherwise
+	#@param hasSeenW		(bool) TRUE if this branch is child of a W, FALSE otherwise
+	#@param hasSeenB		(bool) TRUE if this branch is child of a B, FALSE otherwise
+	#@param hasSeenH		(bool) TRUE if this branch is child of a H, FALSE otherwise
+	def findSpecialHardParticles(self, firstHardParticle, Ws = Set(), Bs = Set(), Hs = Set(), hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
+		for cParticle in firstHardParticle:
+			cStatus = cParticle.status()
+			
+			thisIsTop = False
+			thisIsW = False
+			thisIsB = False
+			thisIsH = False
+			
+			if 21 <= cStatus <= 29:
+				absPdgId = abs(cParticle.pdgId())
+				if absPdgId == 6:
+					thisIsTop = True
+				if absPdgId == 24:
+					thisIsW = True
+					if hasSeenT and not hasSeenW:
+						Ws.add(cParticle)
+						continue
+				if absPdgId == 5:
+					thisIsB = True
+					if hasSeenT and not hasSeenB:
+						Bs.add(cParticle)
+						continue
+				if absPdgId == 25:
+					thisIsH = True
+					Hs.add(cParticle)
+					continue
+			self.findSpecialHardParticles(cParticle,Ws,Bs,Hs,hasSeenT or thisIsTop, hasSeenW or thisIsW , hasSeenB or thisIsB ,hasSeenH or thisIsH )
+		return Ws, Bs, Hs 
+		
+		
+	## finds the products of the hardest process and writes the result to the extracted-root files
+	#
+	#@param histos			(object) Histogramm container
+	#@param eventweight		(double) weight of currently examined event
+	#@param firstHardParticles	(list[Reco Gen Particle]) The reactants of the hardest process
+	#
+	#@return  specialParticles	(tuple (Ws,Bs,Hs)) lists of Reco Gen Particles
+	def findAndPlotSpecialHardParticles(self,histos, eventweight, firstHardParticles):
+		Ws = Set()
+		Bs = Set()
+		Hs = Set()
+		for firstHard in firstHardParticles:
+			Ws, Bs, Hs = self.findSpecialHardParticles(firstHard, Ws, Bs, Hs)
+			break
+		
+		nLeptonicWDecays = 0
+		nHadronicWDecays = 0
+		
+		for idx,w in enumerate(Ws):
+			histos.W_Pt.fill(eventweight,w.pt())
+			histos.W_M.fill(eventweight,w.p4().M())
+			histos.W_E.fill(eventweight,w.energy())
+			WDecay = self.WGetDecayType(w)
+			isLeptonic = WDecay[0]
+			WReferenceparticle = WDecay[1]
+			if isLeptonic:
+				nLeptonicWDecays = nLeptonicWDecays+1
+				histos.W_Leptonic_Pt.fill(eventweight,WReferenceparticle.p4().pt())
+				histos.W_Leptonic_E.fill(eventweight,WReferenceparticle.p4().energy())
+				histos.W_Leptonic_theta.fill(eventweight,WReferenceparticle.p4().theta())
+				histos.W_Leptonic_phi.fill(eventweight,WReferenceparticle.p4().phi())
+				
+				for cChild in WReferenceparticle:
+					pdgId = cChild.pdgId()
+					if pdgId == 11:
+						histos.W_Leptonic_e_Pt.fill(eventweight,cChild.p4().pt())
+						histos.W_Leptonic_e_E.fill(eventweight,cChild.p4().energy())
+						histos.W_Leptonic_e_theta.fill(eventweight,cChild.p4().theta())
+						histos.W_Leptonic_e_phi.fill(eventweight,cChild.p4().phi())
+					if pdgId == 12:
+						histos.W_Leptonic_nue_Pt.fill(eventweight,cChild.p4().pt())
+						histos.W_Leptonic_nue_E.fill(eventweight,cChild.p4().energy())
+						histos.W_Leptonic_nue_theta.fill(eventweight,cChild.p4().theta())
+						histos.W_Leptonic_nue_phi.fill(eventweight,cChild.p4().phi())
+					if pdgId == 13:
+						histos.W_Leptonic_mu_Pt.fill(eventweight,cChild.p4().pt())
+						histos.W_Leptonic_mu_E.fill(eventweight,cChild.p4().energy())
+						histos.W_Leptonic_mu_theta.fill(eventweight,cChild.p4().theta())
+						histos.W_Leptonic_mu_phi.fill(eventweight,cChild.p4().phi())
+					if pdgId == 14:
+						histos.W_Leptonic_numu_Pt.fill(eventweight,cChild.p4().pt())
+						histos.W_Leptonic_numu_E.fill(eventweight,cChild.p4().energy())
+						histos.W_Leptonic_numu_theta.fill(eventweight,cChild.p4().theta())
+						histos.W_Leptonic_numu_phi.fill(eventweight,cChild.p4().phi())
+					if pdgId == 15:
+						histos.W_Leptonic_t_Pt.fill(eventweight,cChild.p4().pt())
+						histos.W_Leptonic_t_E.fill(eventweight,cChild.p4().energy())
+						histos.W_Leptonic_t_theta.fill(eventweight,cChild.p4().theta())
+						histos.W_Leptonic_t_phi.fill(eventweight,cChild.p4().phi())
+					if pdgId == 16:
+						histos.W_Leptonic_nut_Pt.fill(eventweight,cChild.p4().pt())
+						histos.W_Leptonic_nut_E.fill(eventweight,cChild.p4().energy())
+						histos.W_Leptonic_nut_theta.fill(eventweight,cChild.p4().theta())
+						histos.W_Leptonic_nut_phi.fill(eventweight,cChild.p4().phi())
+						
+			else:
+				nHadronicWDecays = nHadronicWDecays+1
+				histos.W_Hadronic_Pt.fill(eventweight,WReferenceparticle.p4().pt())
+				histos.W_Hadronic_E.fill(eventweight,WReferenceparticle.p4().energy())
+
+			
+		histos.W_n_Leptonic.fill(eventweight,nLeptonicWDecays)
+		histos.W_n_Hadronic.fill(eventweight,nHadronicWDecays)
+		
+			
+		for idx,b in enumerate( Bs ):
+			histos.B_Pt.fill(eventweight,b.pt())
+			histos.B_M.fill(eventweight,b.p4().M())
+			histos.B_E.fill(eventweight,b.energy())
+			#B_E.fill(eventweight,b.deltaR())
+		for idx,h in enumerate( Hs):
+			histos.H_Pt.fill(eventweight,h.pt())
+			histos.H_M.fill(eventweight,h.p4().M())
+			histos.H_E.fill(eventweight,h.energy())
+			#H_E.fill(eventweight,h.deltaR())
+			
+		specialParticles = namedtuple('specialParticles','Ws Bs Hs')
+		specialParticles.Ws = Ws
+		specialParticles.Bs = Bs
+		specialParticles.Hs = Hs
+		return specialParticles
+		
+		
+	## from genParticlesProduct, finds the two mother protons
+	#
+	#@param genParticlesProduct	(list[Reco Gen Particle]) the event's particles
+	#
+	#@return  (tuple (p0,p1))	(Reco Gen Particle) the two mother protons
+	def getMotherParticles(self, genParticlesProduct):
+		return genParticlesProduct[0], genParticlesProduct[1]
+
+	## finds reactants of hardest subprocess
+	#
+	#@param p	(Reco Gen Particle) starting particle (search is downwards)
+	#
+	#@return  (tuple (p0,p1))	(Reco Gen Particle) the two reactants of hardest subprocess
+	def findFirstHardParticles(self,p, currentList):
+		
+		cs = p.status()
+		
+		if 20 <= cs <= 29:
+			for d in p:
+				nMothers = d.numberOfMothers()
+				for i in range(0,nMothers):
+					currentList.add(d.mother(i))
+			return True
+				
+		# discard outgoing iss
+		if cs == 43 or cs == 44:
+			return False
+		
+		# discard outgoing fss
+		if cs == 51 or cs == 52:
+			return False
+		
+		# discard outgoing beam remnant
+		if cs == 62 or cs == 63:
+			return False
+		
+		# discard hadronization process particles
+		if 70 <= cs <= 79:
+			return False
+				
+		for d in p:
+			if self.findFirstHardParticles(d, currentList):
+				return True
+		return False
+		
+	## finds all particles between the hardest sub process and the mothers
+	#
+	# This is later used to search for initial state radiation (ISR).
+	#@param particles			(list[Reco Gen Particle]) starting particles
+	#@param mainInteractionChainParticles	[OUT] (list[Reco Gen Particle]) result is written to this list
+	#@param rec				(int) level of recursion
+	def findMainInteractionChainParticles(self,particles, mainInteractionChainParticles, rec = 0):
+		for p in particles:
+			if rec > 0:
+				mainInteractionChainParticles.add(p)
+			mothers = []
+			nMothers = p.numberOfMothers()
+			for i in range (0,nMothers):
+				mothers.append(p.mother(i))
+			self.findMainInteractionChainParticles(mothers,mainInteractionChainParticles, rec + 1)
+		
+		
+	## finds all initial state radiation (ISR) jet mother particles
+	#
+	#@param mainInteractionChainParticles	(list[Reco Gen Particle]) all particles between the hardest sub process and the mothers
+	#@param firstHardParticles		(list[Reco Gen Particle]) The reactants of the hardest process
+	#@param motherParticles			(list[Reco Gen Particle]) The two protons
+	#@param isrJetParticles 		[OUT] (list[Reco Gen Particle]) all initial state radiation (ISR) jet mother particles
+	def findIsrJetParticles(self,mainInteractionChainParticles,firstHardParticles,motherParticles,isrJetParticles):
+		for mic in mainInteractionChainParticles:
+			
+			if mic == motherParticles[0] or mic == motherParticles[1] or mic in firstHardParticles:
+				continue
+				
+			for dMic in mic:
+				found = False
+				if dMic in firstHardParticles or dMic in mainInteractionChainParticles:
+					continue
+				isrJetParticles.add(dMic)
+				
+	## finds all matrix element real emission (MERE) jet mother particles
+	#
+	#@param genParticlesProduct	(list[Reco Gen Particle]) all event particles
+	#@param jetParticlesMERE 	[OUT] (list[Reco Gen Particle]) all matrix element real emission (MERE) jet mother particles
+	def findMEREJetParticles(self,genParticlesProduct,jetParticlesMERE):
+		for p in genParticlesProduct:
+			if p.status() == 23:
+				found = False
+				
+				nMothers = p.numberOfMothers()
+				for i in range (0,nMothers):
+					if p.mother(i).status() == 21: 
+						found = True
+						break
+				if found:
+					jetParticlesMERE.add(p)
+				
+	## finds all particles with status id 21
+	#
+	#@param genParticlesProduct	(list[Reco Gen Particle]) all event particles
+	#@param incomingHardParticles 	[OUT] (list[Reco Gen Particle]) all particles with status id 21
+	def findIncomingHardParticles(self,genParticlesProduct, incomingHardParticles):
+		for p in genParticlesProduct:
+			if p.status() == 21:
+				incomingHardParticles.add(p)
+				
+	## finds all hard matrix element mass particles
+	#
+	#@param incomingHardParticles		(list[Reco Gen Particle]) all particles with status id 21
+	#@param hardMEMassParticles 		[OUT] (lReco Gen Particle])))ist[Reco Gen Particle]) all hard matrix element mass particles
+	def findhardMEMassParticles(self,incomingHardParticles, hardMEMassParticles):
+		for p in incomingHardParticles:
+			for d in p:
+				if 22 <= d.status() <= 23 and d.pdgId() <> 21:
+					hardMEMassParticles.add(d)
+				
+	## finds all particles between hard matrix element massParticles downwards until the next particle decay
+	#
+	#@param hardMassParticle			(list[Reco Gen Particle]) hard matrix element massParticles
+	#@param jetParticlesMERE 			(list[Reco Gen Particle]) matrix element real emission (MERE) particles
+	#@param hardMEMassParticleChainParticles 	[OUT] (list[Reco Gen Particle]) all particles between hard matrix element mass particles downwards until the next particle decay
+	def findhardMEMassParticleChainParticlesFromMassParticle(self, hardMassParticle, jetParticlesMERE, hardMEMassParticleChainParticles):
+		hardMassParticleStatus = hardMassParticle.status()
+		hardMassParticlePdgId = hardMassParticle.pdgId()
+		for d in hardMassParticle:
+			if d.pdgId() <> hardMassParticlePdgId or hardMassParticle in jetParticlesMERE:
+				continue
+
+			hardMEMassParticleChainParticles.add(hardMassParticle)
+			self.findhardMEMassParticleChainParticlesFromMassParticle(d,jetParticlesMERE,hardMEMassParticleChainParticles)
+			return
+	
+	## finds all particles between hard matrix element massParticles downwards until the next particle decay
+	#
+	#@param hardMEMassParticles			(list[Reco Gen Particle]) hard matrix element massParticles
+	#@param jetParticlesMERE 			(list[Reco Gen Particle]) all matrix element real emission (MERE) particles
+	#@param hardMEMassParticleChainParticles 	[OUT] (list[Reco Gen Particle]) all particles between hard matrix element mass particles downwards until the next particle decay
+	def findhardMEMassParticleChainParticles(self, hardMEMassParticles, jetParticlesMERE, hardMEMassParticleChainParticles):
+		for hf in hardMEMassParticles:
+			self.findhardMEMassParticleChainParticlesFromMassParticle(hf,jetParticlesMERE,hardMEMassParticleChainParticles)
+
+	## finds all final state radiation (FSR) jet mother particles coming from parton showers (PS)
+	#
+	#@param hardMEMassParticleChainParticles	(list[Reco Gen Particle]) all particles between hard matrix element mass particles downwards until the next particle decay
+	#@param fsrJetParticlesPS 			[OUT] (list[Reco Gen Particle]) all final state radiation (FSR) jet mother particles coming from parton showers (PS)
+	def findFsrJetParticlesPS(self,hardMEMassParticleChainParticles,fsrJetParticlesPS):
+		for hic in hardMEMassParticleChainParticles:
+			hicPdgId = hic.pdgId()
+			for d in hic:
+				if hicPdgId == d.pdgId():
+					continue
+				if d in hardMEMassParticleChainParticles:
+					continue
+				fsrJetParticlesPS.add(d)
+
+	## finds all FSR/ISR jet mother particles and writes them to the root-extracted file
+	#
+	#@param histos			(object) Histogram container
+	#@param eventweight		(double) weight of the current event
+	#@param genParticlesProduct	(list[Reco Gen Particle]) all event particles
+	#@param motherParticles		(list[Reco Gen Particle]) the two protons
+	#@param firstHardParticles	[OUT] (list[Reco Gen Particle]) The reactants of the hardest process
+	#@param fsrIsrParticles 	[OUT] (tupel(list[Reco Gen Particle]),list[Reco Gen Particle],list[Reco Gen Particle])) (ISR,MERE,FSR) all FSR/MERE/ISR jet mother particles
+	def findAndPlotFsrIsr(self,histos,eventweight,genParticlesProduct,motherParticles,firstHardParticles,fsrIsrParticles):
+		#firstHardParticles = Set()
+		self.findFirstHardParticles(motherParticles[0],firstHardParticles)
+		#self.findFirstHardParticles(motherParticles[1],firstHardParticles)
+		mainInteractionChainParticles = Set()
+		self.findMainInteractionChainParticles(firstHardParticles,mainInteractionChainParticles)
+		isrJetParticles = Set()
+		self.findIsrJetParticles(mainInteractionChainParticles,firstHardParticles,motherParticles,isrJetParticles)
+		jetParticlesMERE = Set()
+		self.findMEREJetParticles(genParticlesProduct,jetParticlesMERE)
+		incomingHardParticles = Set()
+		self.findIncomingHardParticles(genParticlesProduct,incomingHardParticles)
+		hardMEMassParticles = Set()
+		self.findhardMEMassParticles(incomingHardParticles,hardMEMassParticles)
+		hardMEMassParticleChainParticles = Set()
+		self.findhardMEMassParticleChainParticles(hardMEMassParticles, jetParticlesMERE, hardMEMassParticleChainParticles)
+		fsrJetParticlesPS = Set()
+		self.findFsrJetParticlesPS(hardMEMassParticleChainParticles,fsrJetParticlesPS)
+		
+		for p in isrJetParticles:
+			histos.isrjetenergy.fill(eventweight,p.energy())
+			histos.isrjetpt.fill(eventweight,p.pt())
+		histos.nIsrJets.fill(eventweight,len(isrJetParticles))
+			
+		for p in jetParticlesMERE:
+			histos.MEREjetenergy.fill(eventweight,p.energy())
+			histos.MEREjetpt.fill(eventweight,p.pt())
+		histos.nMEREJets.fill(eventweight,len(jetParticlesMERE))
+			
+		for p in fsrJetParticlesPS:
+			histos.fsrjetenergyPS.fill(eventweight,p.energy())
+			histos.fsrjetptPS.fill(eventweight,p.pt())
+		histos.nFsrJetsPS.fill(eventweight,len(fsrJetParticlesPS))
+		
+		# particle Energy
+		for p in genParticlesProduct:
+			histos.particlePt.fill(eventweight,p.pt())
+			histos.particleE.fill(eventweight,p.energy())	
+				
+		fsrIsrParticles.append(isrJetParticles)
+		fsrIsrParticles.append(jetParticlesMERE)
+		fsrIsrParticles.append(fsrJetParticlesPS)
+		
+
+	## processes one event
+	#
+	#@param infoObj			(object) root info object
+	#@param genJetsObj		(object) root genJets object
+	#@param genParticlesObj		(object) root genParticles object
+	#@param currentCut		(string) currentCutString
+	#@param currentCutIndex		(int) currentCut #
+	#@param currentEventIndex	(int) currentEvent #
+	#@param currentEvent		(object) currentEvent
+	#@param histos			(object) Histogram container
+	def processEvent(self,infoObj, genJetsObj, genParticlesObj, currentCut, currentCutIndex, currentEventIndex, currentEvent, histos):
+				
+		currentEvent.getByLabel (genJetsObj.label, genJetsObj.handle)
+		genJetsProduct = genJetsObj.handle.product()
+		currentEvent.getByLabel (infoObj.label, infoObj.handle)
+		eventweight = infoObj.handle.product().weight()
+		currentEvent.getByLabel (genParticlesObj.label, genParticlesObj.handle)
+		genParticlesProduct = genParticlesObj.handle.product()
+			
+		motherParticles = self.getMotherParticles(genParticlesProduct)
+		self.plotGenJets(histos,currentCut,eventweight,genJetsProduct)
+
+		fsrIsrParticles = []
+		firstHardParticles = Set()
+		self.findAndPlotFsrIsr(histos,eventweight,genParticlesProduct,motherParticles,firstHardParticles,fsrIsrParticles)
+		
+		specialParticles = self.findAndPlotSpecialHardParticles(histos,eventweight,firstHardParticles)
+		
+		plotSlot = []
+	
+		# example of how to use the additional plot slot:
+		#plotSlot.append( (motherParticles[1],"A0A0A0") )
+		
+		#print "incomingHardParticles=" + str(len(incomingHardParticles))
+		#for p in incomingHardParticles:
+			#print ParticleGetName(p.pdgId()) + " [" + str(p.status()) + "]"
+			#plotSlot.append( (p,"404080") )
+					
+		if self.runParams.useVisualization and currentCutIndex == 0:
+			fileName = "event" + str(currentEventIndex);
+			visual.GraphViz(fileName, motherParticles, self.runParams, fsrIsrParticles, specialParticles, plotSlot)
+	
+	## runs a batch task
+	#
+	#@param runParams		(object) runParams as received by program switches
+
+	def run(self, runParams):
+		self.runParams = runParams
+		InitializeFWLite()
+		outputFileObject = TFile(runParams.outputFilePath,"RECREATE")
 		totalEventCount = 0
 		Break = False
+		
+		startTime = time.time()
+		
+		genJetsObj = namedtuple('Obj', ['handle', 'label'])
+		genJetsObj.handle = Handle ('std::vector<reco::GenJet>')
+		genJetsObj.label="ak5GenJets"
+		
+		infoObj = namedtuple('Obj', ['handle', 'label'])
+		infoObj.handle = Handle ('<GenEventInfoProduct>')
+		infoObj.label="generator"
+		
+		genParticlesObj = namedtuple('Obj', ['handle', 'label'])
+		genParticlesObj.handle = Handle ('std::vector<reco::GenParticle>')
+		genParticlesObj.label="genParticles"
 		
 		for currentCutIndex, currentCut in enumerate(runParams.pTCuts):
 			if Break:
 				break
-			events = Events (runParams.inputFileList)
 			
-			currentCutString = str(currentCut) #variable for names of histograms
-			#Definition of the Histogram
-			#Jet Histogram
-			njets = Histogram (outputFileObject, "HnJets"+currentCutString, "Number of Jets "+currentCutString, 15, -0.5, 14.5)
-			pt = Histogram(outputFileObject, "Hpt"+currentCutString,"Gen-Jet pt "+currentCutString,100,0,300)
-			phi = Histogram(outputFileObject, "Hphi"+currentCutString,"Gen-Jet Phi "+currentCutString,50,-pi,pi)
-			theta = Histogram(outputFileObject, "Htheta"+currentCutString,"Gen-Jet Theta "+currentCutString,50,0,pi)
-			energy = Histogram(outputFileObject, "Henergy"+currentCutString,"Gen-Jet Energy "+currentCutString,100,0,600)
-			firstjetpt = Histogram(outputFileObject, "HfirstJetpt"+currentCutString,"Pt of hardest Gen-Jet "+currentCutString, 100,0,300)
-			firstjeteta = Histogram(outputFileObject, "H1sJeteta"+currentCutString,"Eta of hardest Gen-Jet "+currentCutString,50,-5,5)
-			secondjetpt = Histogram(outputFileObject, "HsecondJetpt"+currentCutString,"Pt of 2nd hardest Gen-Jet "+currentCutString, 100,0,300)
-			isrjetpt = Histogram(outputFileObject, "Hisrjetpt"+currentCutString, "Pt of ISR-Jets "+currentCutString,100,0,300)
-			fsrjetpt = Histogram(outputFileObject, "Hfsrjetpt"+currentCutString, "Pt of FSR-Jets "+currentCutString,100,0,300)
-			nIsrJets = Histogram(outputFileObject, "HnIsrJets"+currentCutString,"Number of ISR Jets per Event "+currentCutString, 15, -0.5, 14.5)
-			nFsrJets = Histogram(outputFileObject, "HnFsrJets"+currentCutString,"Number of FSR Jets per Event "+currentCutString, 15, -0.5, 14.5)
-			
-			# create handle outside of loop
-			# Handle and lable are pointing at the Branch you want
-			handle  = Handle ('std::vector<reco::GenJet>')
-			label = ("ak5GenJets")
-			infohandle = Handle ('<GenEventInfoProduct>')
-			
-			#ROOT.gROOT.SetStyle('Plain') # white background
-			#Loop through all Events and Fill the Histogram
-			print 'Processing ' + str(events.size()) + ' events @ pTCut='+currentCutString+'GeV'
-			enumber = 0
-			if not runParams.useDebugOutput:
-				sys.stdout.write("[                                                  ]\r[")
-				sys.stdout.flush()
+			events = Events (self.runParams.inputFileList)
+			histos = Histos(str(currentCut),outputFileObject)
+			if runParams.modulo == 0:
+				print 'Processing ' + str(events.size()) + ' events @ pTCut='+str(currentCut)+'GeV'
+				if not runParams.useDebugOutput:
+					sys.stdout.write("[                                                  ]\r[")
+					sys.stdout.flush()
 			percentage50 = 0 
 			for currentEventIndex, currentEvent in enumerate(events):
 			
@@ -90,152 +531,93 @@ class ExtractHistos(object):
 					Break = True
 					break
 			
+			
 				if runParams.useDebugOutput:
 					print "Event #" + str(currentEventIndex)
 				else:
 					percentageNow = 50. * currentEventIndex / events.size()
 					if percentageNow >= percentage50+1:
 						percentage50 = percentage50 + 1 
-						sys.stdout.write('.')
-						sys.stdout.flush()	
-				currentEvent.getByLabel (label, handle)
-				GenJets = handle.product()
-				currentEvent.getByLabel ("generator", infohandle)
-				Infos = infohandle.product()
-				nJets = 0
-				firstJetpt = 0
-				secondJetpt = 0
-				firstJeteta = 0
-				nISRJets = 0
-				nFSRJets = 0
-				eventweight = Infos.weight()
-				
-#				thisEventHasBeenDiGraphed = False
-					
-				isrJets = []
-				fsrJets = []
-				vizReferenceParticle = None
-					
-				for currentJetIndex, currentJet in enumerate(GenJets):
-					if currentJet.pt() >= currentCut and abs(currentJet.eta()) <= runParams.etaCut:
-						nJets = nJets + 1
-						pt.fill(eventweight,currentJet.pt())
-						phi.fill(eventweight,currentJet.phi())
-						theta.fill(eventweight,currentJet.theta())
-						energy.fill(eventweight,currentJet.energy())
-						
-						# ISR/FSR implementation		
-						jetConsitituents = currentJet.getJetConstituents()
-						
-						hardest = False
-						iSS = False
-						fSS = False			
-						particle = jetConsitituents[0]
-						vizReferenceParticle = particle
-						
+						if runParams.modulo == 0:
+							sys.stdout.write('.')
+							sys.stdout.flush()
+						else:
+							print "pT" + str(currentCut) + " P" + str(runParams.moduloRest+1) + "/" + str(runParams.modulo) + ": " + str( 100. * currentEventIndex / events.size()) + "%"
 							
-						while(True):
-							oldParticle = particle
-							try:
-								cs = abs(particle.status())
-								if runParams.useDebugOutput:
-									print ( GetParticleName( particle.pdgId() ) ),
-									print cs,
-								
-								if 21 <= cs <= 29:
-									hardest = True
-									if runParams.useDebugOutput:
-										print ( "[H]" ),
-								if 41 <= cs <= 49:
-									iSS = True
-									if runParams.useDebugOutput:
-										print ( "[IS]" ),
-								if 51 <= cs <= 59:
-									fSS = True
-									if runParams.useDebugOutput:
-										print ( "[FS]" ),
-								if runParams.useDebugOutput:
-									print (" <- "),
-									
-									
-								particle = particle.mother()
-								particle.mother() # this shall throw
-								
-								if not (particle is None):
-									vizReferenceParticle = particle
-
-							except ReferenceError:
-								if runParams.useDebugOutput:
-									print "."
-																
-								break
-							#break
-						if not hardest:
-							isrJets.append(currentJet)
-							isrjetpt.fill(eventweight,currentJet.pt())
-							nISRJets = nISRJets + 1
-							if runParams.useDebugOutput:
-								print ( "[ISR++]" ) 
-						if hardest:
-							fsrJets.append(currentJet)
-							fsrjetpt.fill(eventweight,currentJet.pt())
-							nFSRJets = nFSRJets + 1
-							if runParams.useDebugOutput: 
-								print ( "[FSR++]" )
-						if currentJet.pt() >= firstJetpt and currentJet.pt() >= secondJetpt:
-							secondJetpt = firstJetpt
-							firstJetpt = currentJet.pt()
-							firstJeteta = currentJet.eta()
-						elif currentJet.pt() >= secondJetpt and currentJet.pt() <= firstJetpt:
-							secondJetpt = currentJet.pt()
-							enumber=enumber+1
-						firstjetpt.fill(eventweight,firstJetpt)
-						secondjetpt.fill(eventweight,secondJetpt)
-						firstjeteta.fill(eventweight,firstJeteta)
-						
-				if runParams.useVisualization:
-					fileName = "cut" + currentCutString + "_event" + str(currentEventIndex);
-					#print "Her goes:"
-					#print str(vizReferenceParticle)
-					#print str(anotherParticle)
-					#var = raw_input("This is Visual Function Pre Call")
-
-					visual.GraphViz(fileName, vizReferenceParticle, isrJets, fsrJets)
-						
-				njets.fill(eventweight,nJets)
-				nIsrJets.fill(eventweight,min(15,nISRJets))
-				nFsrJets.fill(eventweight,min(15,nFSRJets))
+				if (runParams.modulo <> 0):
+					currentModIndex = currentEventIndex % runParams.modulo
+					if currentModIndex <> runParams.moduloRest:
+						continue
+				self.processEvent( infoObj, genJetsObj, genParticlesObj, currentCut, currentCutIndex, currentEventIndex, currentEvent, histos )
 				
-			#write all histograms in the output file. After they are wrote, they are getting deleted (s. write() method)
-			pt.write()
-			phi.write()
-			theta.write()
-			energy.write()
-			firstjetpt.write()
-			secondjetpt.write()
-			firstjeteta.write()
-			njets.write()
-			isrjetpt.write()
-			fsrjetpt.write()
-			nIsrJets.write()
-			nFsrJets.write()
-			#delete all variables, that are used again in the next loop
-			del handle
-			del label
-			del infohandle
-			del events
-			sys.stdout.write('.\n')
-			sys.stdout.flush()
-		#if runParams.useVisualization:
-			#visual.GraphViz_WaitForThreads()
+			endTime = time.time()
+			totalTime = endTime - startTime
+			histos.finalize()
+			del histos
+			
+			if not runParams.useDebugOutput:
+				print(".\n")
+		
+		print "%i events in %.2fs (%.2f events/sec)" % (totalEventCount, totalTime, totalEventCount/totalTime)
+			
 
 if __name__ == '__main__':
 	try:
 		argParser = ArgParser(sys.argv)
 		if not argParser.runParams.run:
 			sys.exit()
-		extractHistos = ExtractHistos()
-		extractHistos.run(argParser.runParams)
+		if argParser.runParams.multiProcessing <> 0 and argParser.runParams.modulo == 0:
+			newArgList = []
+			next = False
+			for arg in sys.argv:
+				if next:
+					next = False
+					continue
+				if arg == '-m' or arg == '--multi-processing' or arg == '-p' or arg == '--ptcuts' or arg == "-od" or arg == "--output-outputdirectory:":
+					next = True
+					continue
+				newArgList.append(arg)
+			print sys.argv
+			print newArgList
+			processMultiplier = int(argParser.runParams.multiProcessing)/len(argParser.runParams.pTCuts)
+			print "Spawning " + str(processMultiplier) + "*" + str(len(argParser.runParams.pTCuts)) + " processes"
+			processes = []
+			hAddList = []
+			hAddList.append("hadd")
+			hAddList.append("-f")
+			hAddList.append(argParser.runParams.outputFilePath)
+			for ptCut in argParser.runParams.pTCuts:
+				for pm in range(0,processMultiplier):
+					thisList = copy.copy(newArgList)
+					thisDir = "pT" + str(str(ptCut)) + "_" + str(str(pm))
+					thisList.append("-p")
+					thisList.append(str(ptCut))
+					thisList.append("-%")
+					thisList.append(str(processMultiplier))
+					thisList.append("-%r")
+					thisList.append(str(pm))
+					thisList.append("-od")
+					thisList.append(thisDir)
+					print "spawning subprocess with args: " + str(thisList)
+					processes.append(subprocess.Popen(thisList))
+					hAddList.append(thisDir + "/" + argParser.runParams.outputFile)
+			print "Waiting for all subprocesses to finish their work ..."
+			print "hAddList[] = " + str(hAddList)
+
+			for pIdx, p in enumerate(processes):
+				p.wait()
+				print "process " + str(pIdx+1) + "/" + str(len(processes)) + " finished with code " + str(p.returncode)
+			print "All subprocesses have finished their work."
+			print "Joining data ..."
+			p = subprocess.Popen(hAddList)
+			print "hAddList[] = " + str(hAddList)
+			print "Waiting for hadd to finish ..."
+			p.wait()
+			print "Outputfile has been written to " + argParser.runParams.outputFilePath
+					
+		else:
+			extractHistos = ExtractHistos()
+			extractHistos.run(argParser.runParams)
 	except SystemExit:
 		sys.exit()
 	except:

@@ -1,3 +1,5 @@
+import ROOT
+
 # Use human readable particle names for pdgIds according to 
 # http://pdg.lbl.gov/2014/reviews/rpp2014-rev-monte-carlo-numbering.pdf
 PARTICLE = { 1 : "d",
@@ -25,8 +27,8 @@ PARTICLE = { 1 : "d",
 	2212 : "p"
 	}
 
-# Get human readable particle name by PdgId
-def GetParticleName(pdgId):
+## Get human readable particle name by PdgId
+def ParticleGetName(pdgId):
 	try:
 		if pdgId < 0:
 			return "-" + PARTICLE[-pdgId]
@@ -34,3 +36,36 @@ def GetParticleName(pdgId):
 			return PARTICLE[pdgId]
 	except KeyError:
 		return str(pdgId)
+	
+## Get Pointer adress as hash
+def ParticleGetPointer(p):
+	strP = str(p)
+	indexF = strP.find('0x')+2
+	particleIdentifier = strP[indexF:]
+	indexL = particleIdentifier.find('>')
+	return particleIdentifier[:indexL]
+
+## Create human readable label
+def ParticleGetLabel(p):
+	return ParticleGetName(p.pdgId()) + " [" + str(p.status()) + "]"
+
+## Create human readable label and more info
+def ParticleGetInfo(p):
+	return ParticleGetLabel(p) + " (0x" + ParticleGetPointer(p) + ")"
+
+## Override RecoGenObject __hash__() function
+def Particle__hash__(self):
+	try:
+		return self.___hash
+		
+	except:
+		self.___hash = int(ParticleGetPointer(self),16)
+	return self.___hash
+
+## Override RecoGenObject __eq__() function
+def Particle__eq__(self,other):
+	return self.__hash__() == other.__hash__()
+
+
+ROOT.reco.GenParticle.__hash__ = Particle__hash__
+ROOT.reco.GenParticle.__eq__ = Particle__eq__

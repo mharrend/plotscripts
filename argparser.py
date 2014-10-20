@@ -4,22 +4,15 @@ from runparams import *
 import os.path
 import string
 
+## handles args passed to the program
+#
 class ArgParser(object):
-    #def displayInfo(self):
-	#    print "[useVisualization]=" + str (self.runParams.useVisualization)
-	 #   print "[maxEvents]=" + str (self.runParams.maxEvents)
-	  #  print "[useDebugOutput]=" + str (self.runParams.useDebugOutput)
-	   # print "[OutputFile]=" + self.runParams.outputFile
-	    #print "[InputFiles]"
-	    #for inputFile in self.runParams.inputFileList:
-		#    print "  " + inputFile
 	 
     def parsePtCutString(self, ptCutString):
 	return map(float, string.split(ptCutString,',') )
     
     def parseEventsString(self, eventsString):
 	return map(int, string.split(eventsString,',') )
-	 
 	 
     def displayUserInfo(self):
 	    print ""
@@ -36,16 +29,29 @@ class ArgParser(object):
 	    print "extracthistos inputFile.root /intputDir/*.root -v -o outputfile-extracted.root -p 20,30,50,100 -e 2.5 -l 100"
 	    print ""
 	    print "[switches]"
-	    print "--debug     | -d:  Show debug information"
-	    print "--etacut    | -e:  Set etaCut (double)"
-	    print "--force     | -f:  Force overwriting of output file"
-	    print "--info      | -i:  Shows this info"
-	    print "--limit     | -l:  Limit maximum # of events processed"
-	    print "--output    | -o:  Set output file (string)"
-	    print "--ptcuts    | -p:  Set pTcuts (list of doubles seperated by ',')"
-	    print "--visualize | -v:  Create visualizations saved as ptCut#_event#.png"
-	    print "--zero-jets | -z:  Enable zero additional jets mode"
-	    print "--events    | -#:  Specify certain events (list of ints seperated by ',')"
+	    print " -d   | --debug:                          Show debug information"
+	    print " -e   | --etacut:                         Set etaCut (double)"
+	    print " -f   | --force:                          Force overwriting of output file"
+	    print " -i   | --info:                           Shows this info"
+	    print " -l   | --limit:                          Limit maximum # of events processed"
+	    print " -o   | --output:                         Set output file (string)"
+	    print " -od  | --output-outputdirectory:         Set output directory (string)"
+	    print " -p   | --ptcuts:                         Set pTcuts (list of doubles seperated by ',')"
+	    print " -#   | --events:                         Specify events to processed (list of ints seperated by ',')"
+	    print " -m   | --multi-processing:               create n (int) subprocesses"
+	    print " -%   | --modulo:                         process only every nth event (int)"
+	    print " -%r  | --modulo-rest:                    process only every nth + r event (int)"
+	    print " -v   | --visualize:                      Create visualization(s)"
+	    print " -vs  | --visualize-skip-copies:          Do not render non-physical particle copies"
+	    print " -vnu | --visualize-no-underlying-event:  Do not visualize the underlying event"
+	    print " -vni | --visualize-no-main-interaction:  Do not visualize the main interaction"
+	    print " -vsj | --visualize-color-special-jets:   Color special particle jets"
+	    print " -vce | --visualize-cutoff-energy:        Specify Visualization energy cutoff (double)"
+	    print " -vcs | --visualize-cutoff-special-jets:  Cutoff Special Jets"
+	    print " -vcr | --visualize-cutoff-radiation:     Cutoff ISR/FSR Jets"
+	    print " -vme | --visualize-mode-energy:          Color particles by their energy"
+	    print " -vmp | --visualize-mode-pt:              Color particles by their pT"
+	    print " -vr  | --visualize-renderer:             Specify GraphViz renderer (string), defaults to 'dot'"
 	    print ""
 	    
     def __init__(self, args):
@@ -111,9 +117,63 @@ class ArgParser(object):
 		if ( arg == "-v" ) or ( arg == "--visualize" )  :
 		    self.runParams.useVisualization = True
 		    continue
-		if ( arg == "-z" ) or ( arg == "--zero-jets" )  :
-		    self.runParams.zeroAdditionalJets = True
+		
+		if ( arg == "-vs" ) or ( arg == "--visualize-skip-copies" )  :
+		    self.runParams.visualizationSkipCopies = True
 		    continue
+		
+		if ( arg == "-vnu" ) or ( arg == "--visualize-no-underlying-event" )  :
+		    self.runParams.visualizationShowUnderlyingEvent = False
+		    continue
+		
+		if ( arg == "-vni" ) or ( arg == "--visualize-no-main-interaction" )  :
+		    self.runParams.visualizationShowMainInteraction = False
+		    continue
+		
+		if ( arg == "-vsj" ) or ( arg == "--visualize-color-special-jets" )  :
+		    self.runParams.visualizationColorSpecialJets = True
+		    continue
+		
+		if ( arg == "-vme" ) or ( arg == "--visualize-mode-energy" )  :
+		    self.runParams.visualizationEnergyMode = True
+		    continue
+		
+		if ( arg == "-vmp" ) or ( arg == "--visualize-mode-pt" )  :
+		    self.runParams.visualizationPtMode = True
+		    continue
+		
+		if ( arg == "-vce" ) or ( arg == "--visualize-cutoff-energy" )  :
+		    if nextArg is None or nextArg[0] == '-':
+			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
+		    self.runParams.visualizationEnergyCutoff = int(nextArg)
+		    skip = True
+		    continue
+		
+		if ( arg == "-vcr" ) or ( arg == "--visualize-cutoff-radiation" )  :
+		    self.runParams.visualizationCutoffRadiation = True
+		    continue
+		
+		if ( arg == "-vcs" ) or ( arg == "--visualize-cutoff-special-jets" )  :
+		    self.runParams.visualizationCutSpecialJets = True
+		    continue
+		
+		#if ( arg == "-vp" ) or ( arg == "--visualize-pt-cutoff" )  :
+		    #if nextArg is None or nextArg[0] == '-':
+			     #raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
+		    #self.runParams.visualizationPtCutoff = int(nextArg)
+		    #skip = True
+		    #continue
+		
+		if ( arg == "-vr" ) or ( arg == "--visualize-renderer:" )  :
+		    if nextArg is None or nextArg[0] == '-':
+			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
+		    self.runParams.visualizationRenderer = nextArg
+		    skip = True
+		    continue
+		
+		#if ( arg == "-z" ) or ( arg == "--zero-jets" )  :
+		    #self.runParams.zeroAdditionalJets = True
+		    #continue
 		if ( arg == "-#" ) or ( arg == "--events" )  :
 		    if nextArg is None or nextArg[0] == '-':
 			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
@@ -121,7 +181,32 @@ class ArgParser(object):
 		    self.runParams.events = self.parseEventsString(eventsString)
 		    skip = True
 		    continue
-		
+				
+	    	if ( arg == "-od" ) or ( arg == "--output-outputdirectory" )  :
+		    if nextArg is None or nextArg[0] == '-':
+			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
+		    self.runParams.outputDir = nextArg
+		    skip = True
+		    continue
+		if ( arg == "-m" ) or ( arg == "--multi-processing" )  :
+		    if nextArg is None or nextArg[0] == '-':
+			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
+		    self.runParams.multiProcessing = int(nextArg)
+		    skip = True
+		    continue
+		if ( arg == "-%" ) or ( arg == "--modulo" )  :
+		    if nextArg is None or nextArg[0] == '-':
+			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
+		    self.runParams.modulo = int(nextArg)
+		    skip = True
+		    continue
+		if ( arg == "-%r" ) or ( arg == "--modulo-rest" )  :
+		    if nextArg is None or nextArg[0] == '-':
+			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
+		    self.runParams.moduloRest = int(nextArg)
+		    skip = True
+		    continue
+			
 		if (arg[0] == '-'):
 			raise Exception("'" + arg + "' is not a valid switch!")
 		
@@ -151,5 +236,12 @@ class ArgParser(object):
 	if self.runParams.run:
 		if os.path.isfile(self.runParams.outputFile) and not forceOutputOverride:
 			raise Exception("'" + self.runParams.outputFile + "' exists. Use the --force switch to force overriding.")
+		
+	if len(self.runParams.outputDir) <> 0:
+		if not os.path.exists(self.runParams.outputDir):
+			os.makedirs(self.runParams.outputDir)
+		self.runParams.outputFilePath = self.runParams.outputDir + "/" + self.runParams.outputFile
+	else:
+		self.runParams.outputFilePath = self.runParams.outputFile
 					
 	#self.displayInfo()

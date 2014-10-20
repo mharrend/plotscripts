@@ -7,3 +7,13 @@
 # kate temp files:
 *.*~
 *~
+
+# doxyfiles
+/html
+/latex
+/test
+
+
+#convienience
+review
+test.py
