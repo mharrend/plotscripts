@@ -100,17 +100,18 @@ class ExtractHistos(object):
 		
 	## finds the products of the hardest process
 	#
-	# Particles can be { Higgs (H), W-Boson (W), B-Quark (B) }
+	# Particles can be { Higgs (H), W-Boson (W), B-Quark (B), T-Quark (T) }
 	# This function is used recursively
 	#@param firstHardParticle	(Reco Gen Particle) The reactants of the hardest process 
 	#@param Ws			[OUT] (list[Reco Gen Particle]) found W particles
 	#@param Bs			[OUT] (list[Reco Gen Particle]) found B particles
 	#@param Hs			[OUT] (list[Reco Gen Particle]) found H particles
+	#@param Ts			[OUT] (list[Reco Gen Particle]) found T particles
 	#@param hasSeenT		(bool) TRUE if this branch is child of a T, FALSE otherwise
 	#@param hasSeenW		(bool) TRUE if this branch is child of a W, FALSE otherwise
 	#@param hasSeenB		(bool) TRUE if this branch is child of a B, FALSE otherwise
 	#@param hasSeenH		(bool) TRUE if this branch is child of a H, FALSE otherwise
-	def findSpecialHardParticles(self, firstHardParticle, Ws = Set(), Bs = Set(), Hs = Set(), hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
+	def findSpecialHardParticles(self, firstHardParticle, Ws = Set(), Bs = Set(), Hs = Set(), Ts = Set(), hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
 		for cParticle in firstHardParticle:
 			cStatus = cParticle.status()
 			
@@ -123,6 +124,7 @@ class ExtractHistos(object):
 				absPdgId = abs(cParticle.pdgId())
 				if absPdgId == 6:
 					thisIsTop = True
+					Ts.add(cParticle)
 				if absPdgId == 24:
 					thisIsW = True
 					if hasSeenT and not hasSeenW:
@@ -137,8 +139,8 @@ class ExtractHistos(object):
 					thisIsH = True
 					Hs.add(cParticle)
 					continue
-			self.findSpecialHardParticles(cParticle,Ws,Bs,Hs,hasSeenT or thisIsTop, hasSeenW or thisIsW , hasSeenB or thisIsB ,hasSeenH or thisIsH )
-		return Ws, Bs, Hs 
+			self.findSpecialHardParticles(cParticle,Ws,Bs,Hs,Ts,hasSeenT or thisIsTop, hasSeenW or thisIsW , hasSeenB or thisIsB ,hasSeenH or thisIsH )
+		return Ws, Bs, Hs, Ts
 		
 		
 	## finds the products of the hardest process and writes the result to the extracted-root files
@@ -147,13 +149,14 @@ class ExtractHistos(object):
 	#@param eventweight		(double) weight of currently examined event
 	#@param firstHardParticles	(list[Reco Gen Particle]) The reactants of the hardest process
 	#
-	#@return  specialParticles	(tuple (Ws,Bs,Hs)) lists of Reco Gen Particles
+	#@return  specialParticles	(tuple (Ws,Bs,Hs,Ts)) lists of Reco Gen Particles
 	def findAndPlotSpecialHardParticles(self,histos, eventweight, firstHardParticles):
 		Ws = Set()
 		Bs = Set()
 		Hs = Set()
+		Ts = Set()
 		for firstHard in firstHardParticles:
-			Ws, Bs, Hs = self.findSpecialHardParticles(firstHard, Ws, Bs, Hs)
+			Ws, Bs, Hs, Ts = self.findSpecialHardParticles(firstHard, Ws, Bs, Hs, Ts)
 			break
 		
 		nLeptonicWDecays = 0
@@ -215,22 +218,61 @@ class ExtractHistos(object):
 		histos.W_n_Leptonic.fill(eventweight,nLeptonicWDecays)
 		histos.W_n_Hadronic.fill(eventweight,nHadronicWDecays)
 		
+		deltaPhi = 0
 			
 		for idx,b in enumerate( Bs ):
+			if (idx == 0):
+				deltaPhi = b.phi()
+			if (idx == 1):
+				deltaPhi = b.phi()-deltaPhi
+
 			histos.B_Pt.fill(eventweight,b.pt())
 			histos.B_M.fill(eventweight,b.p4().M())
 			histos.B_E.fill(eventweight,b.energy())
-			#B_E.fill(eventweight,b.deltaR())
+		
+		histos.B_deltaPhi.fill(eventweight,deltaPhi)
+		
 		for idx,h in enumerate( Hs):
+			if (idx == 0):
+				deltaPhi = b.phi()
+			if (idx == 1):
+				deltaPhi = b.phi()-deltaPhi
+
 			histos.H_Pt.fill(eventweight,h.pt())
 			histos.H_M.fill(eventweight,h.p4().M())
 			histos.H_E.fill(eventweight,h.energy())
-			#H_E.fill(eventweight,h.deltaR())
 			
-		specialParticles = namedtuple('specialParticles','Ws Bs Hs')
+		histos.H_deltaPhi.fill(eventweight,deltaPhi)
+		
+		for idx,h in enumerate( Ws):
+			if (idx == 0):
+				deltaPhi = h.phi()
+			if (idx == 1):
+				deltaPhi = h.phi()-deltaPhi
+
+			histos.H_Pt.fill(eventweight,h.pt())
+			histos.H_M.fill(eventweight,h.p4().M())
+			histos.H_E.fill(eventweight,h.energy())
+			
+		histos.W_deltaPhi.fill(eventweight,deltaPhi)
+		
+		for idx,t in enumerate( Ts):
+			if (idx == 0):
+				deltaPhi = t.phi()
+			if (idx == 1):
+				deltaPhi = t.phi()-deltaPhi
+			histos.T_Pt.fill(eventweight,t.pt())
+			histos.T_M.fill(eventweight,t.p4().M())
+			histos.T_E.fill(eventweight,t.energy())
+			#H_E.fill(eventweight,h.deltaR())
+
+		histos.T_deltaPhi.fill(eventweight,deltaPhi)
+			
+		specialParticles = namedtuple('specialParticles','Ws Bs Hs Ts')
 		specialParticles.Ws = Ws
 		specialParticles.Bs = Bs
 		specialParticles.Hs = Hs
+		specialParticles.Ts = Ts
 		return specialParticles
 		
 		

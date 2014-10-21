@@ -8,46 +8,46 @@ compares plots of same name in different root files and stores result in pdf
 
 void compareplots(){
   vector<TFile*> files; 
-  files.push_back(new TFile("/storage/9/schweiger/analyseFxFx/pythia8/100kEvents/mergingscale_100/ttbar2JetLO8TeVMECut50GeVCTEQ6M-extracted.root"));   
-  files.push_back(new TFile("/storage/9/schweiger/analyseFxFx/pythia8/100kEvents/mergingscale_100/ttbarMergedMS100GeVMCCut50GeV8TeVCTEQ6M-extracted.root"));
+  files.push_back(new TFile("review/NSC_tt-extracted.root"));   
+  files.push_back(new TFile("review/SC_tt-extracted.root"));
 
   
 
 
 
   vector<TString> names;
-  names.push_back("ttbar+2 Jets, in LO");
-  names.push_back("ttbar+1 Jet, FxFx-Merged");
+  names.push_back("not spin correlated");
+  names.push_back("spin correlated");
 
   
-  vector<TString> titles;
-  titles.push_back("Gen-Jet p_{T}  with pos weights (GeV)");
-  titles.push_back("Gen-Jet p_{T} with neg weights (GeV)");
-  titles.push_back("Gen-Jet p_{T} (GeV)");
-  titles.push_back("Gen_Jet #phi with pos. weights");
-  titles.push_back("Gen_Jet #phi with neg. weights");
-  titles.push_back("Gen_Jet #phi");
-  titles.push_back("Gen Jet #theta with pos weights");
-  titles.push_back("Gen Jet #theta with neg weights");
-  titles.push_back("Gen Jet #theta");
-  titles.push_back("Gen Jet Energy with pos weights (GeV) ");
-  titles.push_back("Gen Jet Energy with neg weights (GeV)");
-  titles.push_back("Gen Jet Energy (GeV)");
-  titles.push_back("p_{T} of hardest Gen-Jet with pos weights (GeV)");
-  titles.push_back("p_{T} of hardest Gen-Jet with neg weights (GeV)");
-  titles.push_back("p_{T} of hardest Gen-Jet (GeV)");
-  titles.push_back("p_{T} of 2nd hardest Gen-Jet with pos weights (GeV)");
-  titles.push_back("p_{T} of 2nd hardest Gen-Jet with neg weights (GeV)");
-  titles.push_back("p_{T} of 2nd hardest Gen-Jet (GeV)");
-  titles.push_back("#eta of hardest Gen-Jets with pos weights");
-  titles.push_back("#eta of hardest Gen-Jets with neg weights");
-  titles.push_back("#eta of hardest Gen-Jets");
-  titles.push_back("Number of Gen-Jets with pos. weights");
-  titles.push_back("Number of Gen-Jets with neg. weights");
-  titles.push_back("Number of Gen-Jets");
+//   vector<TString> titles;
+//   titles.push_back("Gen-Jet p_{T}  with pos weights (GeV)");
+//   titles.push_back("Gen-Jet p_{T} with neg weights (GeV)");
+//   titles.push_back("Gen-Jet p_{T} (GeV)");
+//   titles.push_back("Gen_Jet #phi with pos. weights");
+//   titles.push_back("Gen_Jet #phi with neg. weights");
+//   titles.push_back("Gen_Jet #phi");
+//   titles.push_back("Gen Jet #theta with pos weights");
+//   titles.push_back("Gen Jet #theta with neg weights");
+//   titles.push_back("Gen Jet #theta");
+//   titles.push_back("Gen Jet Energy with pos weights (GeV) ");
+//   titles.push_back("Gen Jet Energy with neg weights (GeV)");
+//   titles.push_back("Gen Jet Energy (GeV)");
+//   titles.push_back("p_{T} of hardest Gen-Jet with pos weights (GeV)");
+//   titles.push_back("p_{T} of hardest Gen-Jet with neg weights (GeV)");
+//   titles.push_back("p_{T} of hardest Gen-Jet (GeV)");
+//   titles.push_back("p_{T} of 2nd hardest Gen-Jet with pos weights (GeV)");
+//   titles.push_back("p_{T} of 2nd hardest Gen-Jet with neg weights (GeV)");
+//   titles.push_back("p_{T} of 2nd hardest Gen-Jet (GeV)");
+//   titles.push_back("#eta of hardest Gen-Jets with pos weights");
+//   titles.push_back("#eta of hardest Gen-Jets with neg weights");
+//   titles.push_back("#eta of hardest Gen-Jets");
+//   titles.push_back("Number of Gen-Jets with pos. weights");
+//   titles.push_back("Number of Gen-Jets with neg. weights");
+//   titles.push_back("Number of Gen-Jets");
 
 
-  TFile *vergleich = new TFile("vergleich_ttbar_Fx_vs_noFx.root","RECREATE");
+  TFile *vergleich = new TFile("comparison.root","RECREATE");
 
 
 // Show no statistics box
@@ -117,7 +117,7 @@ histos.at(0)->GetYaxis()->SetTitleOffset(1.08);
 
 
 
-histos.at(0)->GetXaxis()->SetTitle(titles.at(run));
+histos.at(0)->GetXaxis()->SetTitle(".");
 run = run+1;
  if(run == (3*8)){
    run = 0;
@@ -189,7 +189,7 @@ c->cd(2);
 ratioHisto->Divide(histos.at(1));
 ratioHisto->SetLineColor(kBlue);
 ratioHisto->SetStats(false);
-ratioHisto->GetYaxis()->SetTitle("Ratio #frac{noFxFx}{FxFx}");
+ratioHisto->GetYaxis()->SetTitle("Ratio #frac{notSC}{SC}");
 // Same Size like in histogram
 ratioHisto->SetLabelSize(histos.at(0)->GetLabelSize() * 0.7 / 0.3);
 ratioHisto->SetTitleOffset((histos.at(0)->GetTitleOffset("Y") * 0.3 / 0.7), "Y");
