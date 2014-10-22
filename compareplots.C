@@ -8,16 +8,16 @@ compares plots of same name in different root files and stores result in pdf
 
 void compareplots(){
   vector<TFile*> files; 
-  files.push_back(new TFile("review/NSC_tt-extracted.root"));   
-  files.push_back(new TFile("review/SC_tt-extracted.root"));
+  files.push_back(new TFile("1-extracted.root"));   
+  files.push_back(new TFile("2-extracted.root"));
 
   
 
 
 
   vector<TString> names;
-  names.push_back("not spin correlated");
   names.push_back("spin correlated");
+  names.push_back("not spin correlated");
 
   
 //   vector<TString> titles;
