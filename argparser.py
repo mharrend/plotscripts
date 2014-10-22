@@ -1,4 +1,5 @@
 # argParser
+# this class generates a RunParams object from the args passed to the script
 
 from runparams import * 
 import os.path

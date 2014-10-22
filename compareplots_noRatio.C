@@ -8,19 +8,15 @@ compares plots of same name in different root files and stores result in pdf
 
 void compareplots_noRatio(){
   vector<TFile*> files; 
-  files.push_back(new TFile("/storage/9/schweiger/analyseFxFx/pythia8/100kEvents/ttbarMergedFxFx8TeVCTEQ6M-extracted.root"));
-  files.push_back(new TFile("/storage/9/schweiger/analyseFxFx/pythia8/100kEvents/mergingscale_30/ttbarMergedFxFxMS30GeVMECut10GeV8TeVCTEQ6M-extracted.root"));   
-  files.push_back(new TFile("/storage/9/schweiger/analyseFxFx/pythia8/100kEvents/mergingscale_100/ttbarMergedMS100GeV8TeVCTEQ6M-extracted.root"));   
-  files.push_back(new TFile("/storage/9/schweiger/analyseFxFx/pythia8/100kEvents/mergingscale_100/ttbarMergedMS100GeVMCCut50GeV8TeVCTEQ6M-extracted.root"));   
+  files.push_back(new TFile("/home/schaaf/PlotMacros/Plotscripts-Repo/review/2014-10-17-tt0-extracted.root"));
+  files.push_back(new TFile("/home/schaaf/PlotMacros/Plotscripts-Repo/review/2014-10-17-tt1-extracted.root"));   
   
 
 
   
   vector<TString> names;
-  names.push_back("ttbar +0/1 Jet, #mu_{Q}=10 GeV #mu_{ME} = 10 GeV");
-  names.push_back("ttbar +0/1 Jet, #mu_{Q}=30 GeV #mu_{ME} = 10 GeV");
-  names.push_back("ttbar +0/1 Jet, #mu_{Q}=100 GeV #mu_{ME} = 10 GeV");
-  names.push_back("ttbar +0/1 Jet, #mu_{Q}=100 GeV #mu_{ME} = 50 GeV");
+  names.push_back("ttbar +0 Jet, #mu_{Q}=30 GeV #mu_{ME} = 10 GeV");
+  names.push_back("ttbar +1 Jet, #mu_{Q}=30 GeV #mu_{ME} = 10 GeV");
   
   
   vector<TString> titles;
@@ -117,7 +113,7 @@ histos.at(0)->GetYaxis()->SetTitleSize(0.06);
 histos.at(0)->GetYaxis()->SetTitleOffset(1.15);
 	
 
- histos.at(0)->GetXaxis()->SetTitle(titles.at(run));
+ //histos.at(0)->GetXaxis()->SetTitle(titles.at(run));
  run = run+1;
  if(run == (3*8)){
    run = 0;

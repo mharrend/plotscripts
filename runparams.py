@@ -1,5 +1,5 @@
-
-## handles args passed to the program
+#
+## this class generates a RunParams object which determines the run configuration of the program
 #
 class RunParams(object):
 	def __init__(self):
