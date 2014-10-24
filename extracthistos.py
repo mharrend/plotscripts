@@ -98,11 +98,26 @@ class ExtractHistos(object):
 		histos.njets.fill(eventweight,nJets)
 		
 		
+	## finds leptonic children of decaying W
+	#
+	#@param motherParticle		(Reco Gen Particle) call this method with the mother W-Boson
+	#@param foundLeptons		[OUT] (list[Reco Gen Particle]) found leptons will be stored here
+	def findWLeptons(self, motherParticle, foundLeptons):
+		for cParticle in motherParticle:
+			absPdgId = abs(cParticle.pdgId())
+			if absPdgId == 24:
+				self.findWLeptons(cParticle, foundLeptons)
+				return
+			if 11 <= absPdgId <= 16:
+				foundLeptons.add(cParticle)
+			
+		
 	## finds the products of the hardest process
 	#
 	# Particles can be { Higgs (H), W-Boson (W), B-Quark (B), T-Quark (T) }
 	# This function is used recursively
-	#@param firstHardParticle	(Reco Gen Particle) The reactants of the hardest process 
+	#@param firstHardParticle	(Reco Gen Particle) The reactants of the hardest process
+	#@param leptonicWDecayParticles	[OUT] (list[list[Reco Gen Particle]]) lists children of W Decays 
 	#@param Ws			[OUT] (list[Reco Gen Particle]) found W particles
 	#@param Bs			[OUT] (list[Reco Gen Particle]) found B particles
 	#@param Hs			[OUT] (list[Reco Gen Particle]) found H particles
@@ -111,7 +126,8 @@ class ExtractHistos(object):
 	#@param hasSeenW		(bool) TRUE if this branch is child of a W, FALSE otherwise
 	#@param hasSeenB		(bool) TRUE if this branch is child of a B, FALSE otherwise
 	#@param hasSeenH		(bool) TRUE if this branch is child of a H, FALSE otherwise
-	def findSpecialHardParticles(self, firstHardParticle, Ws = Set(), Bs = Set(), Hs = Set(), Ts = Set(), hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
+	def findSpecialHardParticles(self, firstHardParticle, leptonicWDecayParticles = Set(), Ws = Set(), Bs = Set(), Hs = Set(), Ts = Set(), hasSeenT=False, hasSeenW=False, hasSeenB=False, hasSeenH=False):
+		
 		for cParticle in firstHardParticle:
 			cStatus = cParticle.status()
 			
@@ -129,6 +145,11 @@ class ExtractHistos(object):
 					thisIsW = True
 					if hasSeenT and not hasSeenW:
 						Ws.add(cParticle)
+						foundLeptons = Set()
+						#print "Searching W for leptonic children ... "
+						self.findWLeptons(cParticle, foundLeptons)
+						#print "found " + str(len(foundLeptons)) + " leptonic children ... "
+						leptonicWDecayParticles.add(foundLeptons)
 						continue
 				if absPdgId == 5:
 					thisIsB = True
@@ -139,7 +160,7 @@ class ExtractHistos(object):
 					thisIsH = True
 					Hs.add(cParticle)
 					continue
-			self.findSpecialHardParticles(cParticle,Ws,Bs,Hs,Ts,hasSeenT or thisIsTop, hasSeenW or thisIsW , hasSeenB or thisIsB ,hasSeenH or thisIsH )
+			self.findSpecialHardParticles(cParticle,leptonicWDecayParticles, Ws,Bs,Hs,Ts,hasSeenT or thisIsTop, hasSeenW or thisIsW , hasSeenB or thisIsB ,hasSeenH or thisIsH )
 		return Ws, Bs, Hs, Ts
 		
 		
@@ -155,8 +176,9 @@ class ExtractHistos(object):
 		Bs = Set()
 		Hs = Set()
 		Ts = Set()
+		leptonicWDecayParticles = Set()
 		for firstHard in firstHardParticles:
-			Ws, Bs, Hs, Ts = self.findSpecialHardParticles(firstHard, Ws, Bs, Hs, Ts)
+			Ws, Bs, Hs, Ts = self.findSpecialHardParticles(firstHard, leptonicWDecayParticles, Ws, Bs, Hs, Ts)
 			break
 		
 		nLeptonicWDecays = 0
@@ -266,13 +288,33 @@ class ExtractHistos(object):
 			histos.T_E.fill(eventweight,t.energy())
 			#H_E.fill(eventweight,h.deltaR())
 
+		
+		validLeptonicQuadruple = False
+		leptonicPhi = [ 0,0 ]
+		
+		#print "number of leptonic children tuples: " + str(len(leptonicWDecayParticles))
+		
+		if len(leptonicWDecayParticles) == 2:
+			for leptonicWDecayParticleTuple in leptonicWDecayParticles:
+				#print "number of leptonic children in tuple: " + str(len(leptonicWDecayParticleTuple))
+				if len(leptonicWDecayParticleTuple) == 2:
+					validLeptonicQuadruple = True
+					for idx, lepton in enumerate(leptonicWDecayParticleTuple):
+						absPdgId = abs(lepton.pdgId())
+						leptonicPhi[absPdgId % 2] = lepton.phi() - leptonicPhi[absPdgId % 2]
+		
+		if validLeptonicQuadruple:
+			histos.W_Leptonic_WDecay_NeutralLepton_DeltaPhi.fill(eventweight,leptonicPhi[0])
+			histos.W_Leptonic_WDecay_ChargedLepton_DeltaPhi.fill(eventweight,leptonicPhi[1])
+
 		histos.T_deltaPhi.fill(eventweight,deltaPhi)
 			
-		specialParticles = namedtuple('specialParticles','Ws Bs Hs Ts')
+		specialParticles = namedtuple('specialParticles','Ws Bs Hs Ts LeptonicWDecayParticles')
 		specialParticles.Ws = Ws
 		specialParticles.Bs = Bs
 		specialParticles.Hs = Hs
 		specialParticles.Ts = Ts
+		specialParticles.LeptonicWDecayParticles = leptonicWDecayParticles
 		return specialParticles
 		
 		
