@@ -665,7 +665,7 @@ if __name__ == '__main__':
 				newArgList.append(arg)
 			print sys.argv
 			print newArgList
-			processMultiplier = int(argParser.runParams.multiProcessing)/len(argParser.runParams.pTCuts)
+			processMultiplier = max(1,int(argParser.runParams.multiProcessing)/len(argParser.runParams.pTCuts))
 			print "Spawning " + str(processMultiplier) + "*" + str(len(argParser.runParams.pTCuts)) + " processes"
 			processes = []
 			hAddList = []

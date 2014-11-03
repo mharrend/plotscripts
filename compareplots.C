@@ -8,8 +8,8 @@ compares plots of same name in different root files and stores result in pdf
 
 void compareplots(){
   vector<TFile*> files; 
-  files.push_back(new TFile("sc-extracted.root"));   
-  files.push_back(new TFile("nsc-extracted.root"));
+  files.push_back(new TFile("ttbar+0_1_jet_8TeV_FxFx_CTEQ6M_MS30GeV_MadSpin-extracted.root"));   
+  files.push_back(new TFile("ttbar+0_1_jet_8TeV_FxFx_CTEQ6M_MS10GeV-extracted.root"));
 
   
 
