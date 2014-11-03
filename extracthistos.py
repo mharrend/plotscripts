@@ -198,8 +198,10 @@ class ExtractHistos(object):
 				histos.W_Leptonic_theta.fill(eventweight,WReferenceparticle.p4().theta())
 				histos.W_Leptonic_phi.fill(eventweight,WReferenceparticle.p4().phi())
 				
-				for cChild in WReferenceparticle:
-					pdgId = cChild.pdgId()
+				for cChild in WReferenceparticle.mother(0):
+					
+					pdgId = abs(cChild.pdgId())
+					#print ParticleGetName(WReferenceparticle.mother(0).pdgId()) + " -> " + ParticleGetName(pdgId)
 					if pdgId == 11:
 						histos.W_Leptonic_e_Pt.fill(eventweight,cChild.p4().pt())
 						histos.W_Leptonic_e_E.fill(eventweight,cChild.p4().energy())

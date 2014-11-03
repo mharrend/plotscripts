@@ -8,8 +8,8 @@ compares plots of same name in different root files and stores result in pdf
 
 void compareplots(){
   vector<TFile*> files; 
-  files.push_back(new TFile("1-extracted.root"));   
-  files.push_back(new TFile("2-extracted.root"));
+  files.push_back(new TFile("sc-extracted.root"));   
+  files.push_back(new TFile("nsc-extracted.root"));
 
   
 
@@ -17,35 +17,7 @@ void compareplots(){
 
   vector<TString> names;
   names.push_back("spin correlated");
-  names.push_back("not spin correlated");
-
-  
-//   vector<TString> titles;
-//   titles.push_back("Gen-Jet p_{T}  with pos weights (GeV)");
-//   titles.push_back("Gen-Jet p_{T} with neg weights (GeV)");
-//   titles.push_back("Gen-Jet p_{T} (GeV)");
-//   titles.push_back("Gen_Jet #phi with pos. weights");
-//   titles.push_back("Gen_Jet #phi with neg. weights");
-//   titles.push_back("Gen_Jet #phi");
-//   titles.push_back("Gen Jet #theta with pos weights");
-//   titles.push_back("Gen Jet #theta with neg weights");
-//   titles.push_back("Gen Jet #theta");
-//   titles.push_back("Gen Jet Energy with pos weights (GeV) ");
-//   titles.push_back("Gen Jet Energy with neg weights (GeV)");
-//   titles.push_back("Gen Jet Energy (GeV)");
-//   titles.push_back("p_{T} of hardest Gen-Jet with pos weights (GeV)");
-//   titles.push_back("p_{T} of hardest Gen-Jet with neg weights (GeV)");
-//   titles.push_back("p_{T} of hardest Gen-Jet (GeV)");
-//   titles.push_back("p_{T} of 2nd hardest Gen-Jet with pos weights (GeV)");
-//   titles.push_back("p_{T} of 2nd hardest Gen-Jet with neg weights (GeV)");
-//   titles.push_back("p_{T} of 2nd hardest Gen-Jet (GeV)");
-//   titles.push_back("#eta of hardest Gen-Jets with pos weights");
-//   titles.push_back("#eta of hardest Gen-Jets with neg weights");
-//   titles.push_back("#eta of hardest Gen-Jets");
-//   titles.push_back("Number of Gen-Jets with pos. weights");
-//   titles.push_back("Number of Gen-Jets with neg. weights");
-//   titles.push_back("Number of Gen-Jets");
-
+  names.push_back("uncorrelated");
 
   TFile *vergleich = new TFile("comparison.root","RECREATE");
 
@@ -73,9 +45,12 @@ TH1::SetDefaultSumw2();
 
     vector<TH1F*> histos;
     histos.push_back((TH1F*)key->ReadObj());
+histos[0]->SetName(key->GetName());
     for(size_t i=1;i<files.size();i++){
       histos.push_back((TH1F*)files.at(i)->Get(histos.at(0)->GetName()));
+	histos[i]->SetName(key->GetName());
     }
+c->SetName(key->GetName());
 		       
     for(size_t i=0;i<histos.size();i++){
       if(i == 0){
@@ -116,8 +91,9 @@ histos.at(0)->GetYaxis()->SetTitleSize(0.06);
 histos.at(0)->GetYaxis()->SetTitleOffset(1.08);
 
 
+// c->SetName(histos.at(0)->GetName())
+histos.at(0)->GetXaxis()->SetTitle(histos.at(0)->GetName());
 
-histos.at(0)->GetXaxis()->SetTitle(".");
 run = run+1;
  if(run == (3*8)){
    run = 0;
@@ -189,7 +165,7 @@ c->cd(2);
 ratioHisto->Divide(histos.at(1));
 ratioHisto->SetLineColor(kBlue);
 ratioHisto->SetStats(false);
-ratioHisto->GetYaxis()->SetTitle("Ratio #frac{notSC}{SC}");
+ratioHisto->GetYaxis()->SetTitle("Ratio #frac{uncorr.}{SC}");
 // Same Size like in histogram
 ratioHisto->SetLabelSize(histos.at(0)->GetLabelSize() * 0.7 / 0.3);
 ratioHisto->SetTitleOffset((histos.at(0)->GetTitleOffset("Y") * 0.3 / 0.7), "Y");
