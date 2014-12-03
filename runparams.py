@@ -22,7 +22,7 @@ class RunParams(object):
 		self.maxEvents = -1
 		self.useDebugOutput = False
 		self.etaCut = 2.5
-		self.pTCuts = [25., 30., 50., 100.]
+		self.pTCuts = 50. #[25., 30., 50., 100.]
 		self.events = []
 		self.run = True
 		self.zeroAdditionalJets = False

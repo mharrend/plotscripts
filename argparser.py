@@ -83,7 +83,7 @@ class ArgParser(object):
 		if ( arg == "-e" ) or ( arg == "--etacut" )  :
 		    if nextArg is None or nextArg[0] == '-':
 			     raise Exception("'" + arg + "': Parse Error after '"+arg+"'!")
-		    self.runParams.eta = int(nextArg)
+		    self.runParams.eta = float(nextArg)
 		    skip = True
 		    continue
 		if ( arg == "-f" ) or ( arg == "--force" )  :
