@@ -258,9 +258,9 @@ class ExtractHistos(object):
 		
 		for idx,h in enumerate( Hs):
 			if (idx == 0):
-				deltaPhi = b.phi()
+				deltaPhi = h.phi()
 			if (idx == 1):
-				deltaPhi = b.phi()-deltaPhi
+				deltaPhi = h.phi()-deltaPhi
 
 			histos.H_Pt.fill(eventweight,h.pt())
 			histos.H_M.fill(eventweight,h.p4().M())
@@ -273,10 +273,6 @@ class ExtractHistos(object):
 				deltaPhi = h.phi()
 			if (idx == 1):
 				deltaPhi = h.phi()-deltaPhi
-
-			histos.H_Pt.fill(eventweight,h.pt())
-			histos.H_M.fill(eventweight,h.p4().M())
-			histos.H_E.fill(eventweight,h.energy())
 			
 		histos.W_deltaPhi.fill(eventweight,deltaPhi)
 		
