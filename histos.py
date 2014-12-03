@@ -58,6 +58,9 @@ class Histos(object):
 		self.W_Leptonic_nut_phi = Histogram(outputFileObject, "HWLnutphi"+currentCutString,"W-Boson -> nu_t phi "+currentCutString,50,-pi,pi)
 		self.W_Leptonic_nut_theta = Histogram(outputFileObject, "HWLnuttheta"+currentCutString,"W-Boson -> nu_t theta "+currentCutString,50,0,pi)
 		
+		self.W_Leptonic_WDecay_ChargedLepton_DeltaPhi = Histogram(outputFileObject, "HWLW_CL_deltaPhi"+currentCutString,"W_Leptonic_WDecay_ChargedLepton_DeltaPhi "+currentCutString,100,-pi,pi)
+		self.W_Leptonic_WDecay_NeutralLepton_DeltaPhi = Histogram(outputFileObject, "HWLW_NL_deltaPhi"+currentCutString,"W_Leptonic_WDecay_NeutralLepton_DeltaPhi "+currentCutString,100,-pi,pi)
+		
 		self.W_n_Leptonic = Histogram (outputFileObject, "HnWLeptonic"+currentCutString, "Number of Leptonic W-Decays "+currentCutString, 3, -0.5, 2.5)
 		self.W_n_Hadronic = Histogram (outputFileObject, "HnWHadronic"+currentCutString, "Number of Hadronic W-Decays "+currentCutString, 3, -0.5, 2.5)	
 			
@@ -135,6 +138,9 @@ class Histos(object):
 		self.W_Leptonic_nut_E.finalize()
 		self.W_Leptonic_nut_theta.finalize()
 		self.W_Leptonic_nut_phi.finalize()
+		
+		self.W_Leptonic_WDecay_ChargedLepton_DeltaPhi.finalize()
+		self.W_Leptonic_WDecay_NeutralLepton_DeltaPhi.finalize()
 		
 		self.W_n_Leptonic.finalize()
 		self.W_n_Hadronic.finalize()

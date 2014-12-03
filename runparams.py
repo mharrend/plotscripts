@@ -5,7 +5,7 @@ class RunParams(object):
 	def __init__(self):
 		self.inputFileList = []
 		self.outputFile = "output-extracted.root"
-		self.outputDir = ""
+		self.outputDir = "."
 		self.outputFilePath = ""
 		self.useVisualization = False
 		self.visualizationEnergyCutoff = -1
