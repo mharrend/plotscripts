@@ -18,17 +18,21 @@ class Histogram(object):
 		ROOT.gStyle.SetStripDecimals(ROOT.kTRUE);
 		ROOT.gStyle.SetLineWidth(2)			
 		self.pos.GetYaxis().SetTitle("Normalized units")
-                self.pos.GetXaxis().SetTitle(xaxistitle)
+                self.pos.GetXaxis().SetTitle(xaxistitle+" (pos wgts)")
 		self.pos.SetLineWidth(2)
 		self.neg.GetYaxis().SetTitle("Normalized units")
-                self.neg.GetXaxis().SetTitle(xaxistitle)
+                self.neg.GetXaxis().SetTitle(xaxistitle+" (neg wgts)")
 		self.neg.SetLineWidth(2)
 		self.combined = TH1F(inhalt,title,nbins,minbin,maxbin)
 		self.combined.GetYaxis().SetTitle("Normalized units")
                 self.combined.GetXaxis().SetTitle(xaxistitle)
 		self.combined.SetLineWidth(2)
 		self.outputFile = outputFile
-	
+                
+                self.pos.Sumw2()        # required here!
+                self.neg.Sumw2()        # required here!
+	        self.combined.Sumw2()   # required here!
+        
 	def check(self, caller):
 		if (self.pos is None) or (self.neg is None) or (self.combined is None):
 			print caller + ": Warning: histogram->check() failed. (None)"

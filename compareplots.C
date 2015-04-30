@@ -8,24 +8,22 @@ compares plots of same name in different root files and stores result in pdf
 
 void compareplots(){
   vector<TFile*> files; 
-  files.push_back(new TFile("ttbar+0_1_jet_8TeV_FxFx_CTEQ6M_MS30GeV_MadSpin-extracted.root"));   
-  files.push_back(new TFile("ttbar+0_1_jet_8TeV_FxFx_CTEQ6M_MS10GeV-extracted.root"));
-
-  
+  files.push_back(new TFile("extractoldsamp_ptcut50_newerhists_sumw2-extracted.root"));   
+  files.push_back(new TFile("extractnewsamp_ptcut50_newerhists_sumw2-extracted.root"));
 
 
 
   vector<TString> names;
-  names.push_back("spin correlated");
-  names.push_back("uncorrelated");
+  names.push_back("Fall13");
+  names.push_back("RunIIWinter15GS");
 
-  TFile *vergleich = new TFile("comparison.root","RECREATE");
+  TFile *vergleich = new TFile("comparisonttHcut50_newerhists_sumw2_ttH125lin.root","RECREATE");
 
 
 // Show no statistics box
 gStyle->SetOptStat(0);
 
-TH1::SetDefaultSumw2();
+//TH1::SetDefaultSumw2();
 
 // Main program part
   TIter nextkey(files.at(0)->GetListOfKeys());
@@ -74,7 +72,7 @@ c->SetName(key->GetName());
     }
     
     for(size_t i=0;i<histos.size();i++){
-      histos.at(i)->Sumw2();
+      //histos.at(i)->Sumw2();
       histos.at(i)->Scale(1./histos.at(i)->Integral(),"width");
     }
 
@@ -92,7 +90,8 @@ histos.at(0)->GetYaxis()->SetTitleOffset(1.08);
 
 
 // c->SetName(histos.at(0)->GetName())
-histos.at(0)->GetXaxis()->SetTitle(histos.at(0)->GetName());
+//histos.at(0)->GetXaxis()->SetTitle(histos.at(0)->GetName());
+//histos.at(0)->GetXaxis()->SetTitle(histos.at(0)->GetXaxis()->GetTitle());
 
 run = run+1;
  if(run == (3*8)){
@@ -109,6 +108,7 @@ if(histos.size() == 2)
            mainPad->SetBottomMargin(0.0);
            mainPad->SetRightMargin(0.04);
 	   mainPad->SetLeftMargin(0.13);
+           //mainPad->SetLogy(1);
            mainPad->Draw();
 
            //create ratio pad                                                                                                                                                           
@@ -125,7 +125,7 @@ if(histos.size() == 2)
 
 // Draw both histograms first
 c->cd(1);
-
+//c->mainPad()->SetLogy(1);  // <<<<------- set log scale
 histos.at(0)->Draw("histo E");
 histos.at(1)->Draw("histo same E");
 
@@ -158,6 +158,7 @@ histos.at(1)->Draw("histo same E");
     }
     l->Draw("same");
 
+    
 
 // Clone histograms and draw ratio plot
 c->cd(2);
@@ -165,7 +166,7 @@ c->cd(2);
 ratioHisto->Divide(histos.at(1));
 ratioHisto->SetLineColor(kBlue);
 ratioHisto->SetStats(false);
-ratioHisto->GetYaxis()->SetTitle("Ratio #frac{uncorr.}{SC}");
+ratioHisto->GetYaxis()->SetTitle("Ratio #frac{old}{new}");
 // Same Size like in histogram
 ratioHisto->SetLabelSize(histos.at(0)->GetLabelSize() * 0.7 / 0.3);
 ratioHisto->SetTitleOffset((histos.at(0)->GetTitleOffset("Y") * 0.3 / 0.7), "Y");
