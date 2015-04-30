@@ -90,7 +90,7 @@ histos.at(0)->GetYaxis()->SetTitleOffset(1.08);
 
 
 // c->SetName(histos.at(0)->GetName())
-//histos.at(0)->GetXaxis()->SetTitle(histos.at(0)->GetName());
+histos.at(0)->GetXaxis()->SetTitle(histos.at(0)->GetName());
 //histos.at(0)->GetXaxis()->SetTitle(histos.at(0)->GetXaxis()->GetTitle());
 
 run = run+1;
